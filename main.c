@@ -66,12 +66,16 @@ void main(void){
 //                if (PWM >= 230){
 //                    PWM = 25;
 //                }else PWM ++;
-//                PSMC1DCL = PWM;     
-//                PSMC1CONbits.PSMC1LD = 1; //Load Buffer
+                PWM = 100;
+                PSMC1DCL = PWM;     
+                PSMC1CONbits.PSMC1LD = 1; //Load Buffer
 //                display_value(MIN);
 //                UART_send_string(":");
 //                display_value(SEC);
 //                UART_send_string("\n\r");
+                UART_send_string("D: ");
+                display_value(((unsigned int)PWM*0.3906));    
+                UART_send_string("\n\r");
                 UART_send_string("V: ");
                 display_value((unsigned int)v);    
                 UART_send_string("\n\r");

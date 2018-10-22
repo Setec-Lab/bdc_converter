@@ -105,8 +105,8 @@ unsigned int            			log_on;
 #define     PARAM_DISC()        	{ kp=0.1; ki=0.05; SET_CURRENT(i_disc); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0;  EOCD_count = 4;} //MAYBE THAT THING CHARGE CAN DISAPEAR
 #define     PARAM_DCRES()       	{ kp=0.1; ki=0.05; SET_CURRENT(capacity / 5); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0; dc_res_count = 14;}
 
-#define 	DC_MIN         25		// DC = 1/32 MINIMUM
-#define 	DC_MAX         255		// NEW APPROACH TEST
+#define 	DC_MIN         26		// DC = 1/32 MINIMUM
+#define 	DC_MAX         200		// NEW APPROACH TEST
 
  
 #define     COUNTER        1000

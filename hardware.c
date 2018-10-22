@@ -72,8 +72,10 @@ void Init_Registers()
     //TRISA4 = 1;                         //[Temporary]Set RA4 as input to let it drive from RB3.
     //WPUA4 = 0;                          //Disable WPU for RA4.  
 
-    TRISB1 = 1;                         //Set as input
-    WPUB1 = 0;                          //Disable weak pull up
+    TRISC0 = 1;                         //Set as input
+    WPUC0 = 0;                          //Disable weak pull up
+    TRISC1 = 1;                         //Set as input
+    WPUC1 = 0;                          //Disable weak pull up
     
     PSMC1CON = 0x00;                    //Clear configuration to start 
     PSMC1MDL = 0x00;                    //No modulation
@@ -101,7 +103,10 @@ void Init_Registers()
     
     PSMC1CON = 0x80;                    //Enable|Load Buffer|Dead band disabled|Single PWM
     //PSMC1TIE = 1;                       //Enable interrupts for Time Based 
+    
+    //DEACTIVATE FOR NOW
     TRISC0 = 0;                         //Set RC0 as output
+    //TRISC1 = 0;                         //Set RC0 as output
     
     //---------------------ADC SETTINGS----------------------------------------
     //INTERRUPTS 
@@ -238,7 +243,7 @@ void read_ADC()
     AD_SET_CHAN(V_CHAN);
     AD_CONVERT();
     AD_RESULT();
-    v = ad_res * 1.22070; //* 1.2207;
+    v = ad_res * 1.3086; //* 1.2207;
     
 //    opr = 1.28296 * ad_res;   //1051/1000
 //    v = opr;    //0 as offset   
