@@ -36,9 +36,9 @@ void main(void){
 
     TRISBbits.TRISB0 = 0;               //Set RB0 as output. led
     ANSELBbits.ANSB0 = 0;               //Digital
-    TRISB1 = 1;     //Set RB1 as input
-    WPUB1 = 0;      //Disable pull up
-    
+    UART_interrupt_enable();
+    PWM = 180;
+    TRISC0 = 1;  
     while(1){        
         if(TMR0IF){
             TMR0IF = 0;   
@@ -66,7 +66,6 @@ void main(void){
 //                if (PWM >= 230){
 //                    PWM = 25;
 //                }else PWM ++;
-                PWM = 100;
                 PSMC1DCL = PWM;     
                 PSMC1CONbits.PSMC1LD = 1; //Load Buffer
 //                display_value(MIN);
@@ -91,9 +90,9 @@ void main(void){
 
 void interrupt serial_interrupt(void) 
 {
+    
     if(RCIF)
     {
-
         if(RC1STAbits.OERR) // check for Error 
         {
             RC1STAbits.CREN = 0; //If error -> Reset 
@@ -102,24 +101,39 @@ void interrupt serial_interrupt(void)
         
         while(RCIF) esc = RC1REG; //receive the value and put it to esc
 
+//        if (esc == 0x1B)
+//        {
+//            state = STANDBY;
+//            esc = 0;
+//            wait_count = 0;
+//            dc_res_count = 0;
+//        }else if  (esc == 110)
+//        {
+//            STOP_CONVERTER();
+//            LINEBREAK;
+//            UART_send_string(next_cell_str_main);
+//            LINEBREAK;
+//            __delay_ms(50);
+//            cell_count++;
+//            state = IDLE;  
         if (esc == 0x1B)
         {
-            state = STANDBY;
-            esc = 0;
-            wait_count = 0;
-            dc_res_count = 0;
-        }else if  (esc == 110)
+            TRISC0 = 1;                         //Deactivate PWM
+        }else if (esc == 0x72)//+
         {
-            STOP_CONVERTER();
-            LINEBREAK;
-            UART_send_string(next_cell_str_main);
-            LINEBREAK;
-            __delay_ms(50);
-            cell_count++;
-            state = IDLE;  
+            TRISC0 = 0;
+        }else if (esc == 0x61)//a
+        {
+            PWM++;
+        }else if  (esc == 0x7A)//z
+        {
+            PWM--;
         }else
         {
             esc = 0;
         }
+        UART_send_string("\n\r REC: \n\r");
+        UART_send_char(esc);
+        UART_send_string("\n\r");
     }    
 }

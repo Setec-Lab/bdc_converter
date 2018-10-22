@@ -115,7 +115,7 @@ void Init_Registers()
     
     //ADC INPUTS//check this after final design
     TRISB1 = 1;                         //RB1, Voltage 
-    ANSB1 = 0;                          //RA3 analog
+    ANSB1 = 1;                          //RA3 analog
     WPUB1 = 0;                          //Weak pull up Deactivated
     // TRISA0 = 1;                         //RA0, current sensing input    
     // ANSA0 = 1;                          //RA0 analog      
@@ -125,9 +125,9 @@ void Init_Registers()
     // WPUB5 = 0;                          //Weak pull up Deactivated
     
     ADCON0bits.ADRMD = 0;               //12 bits result
-    ADCON1bits.ADCS = 0b110;            //Clock selected as FOSC/64
+    ADCON1bits.ADCS = 0b010;            //Clock selected as FOSC/32
     ADCON1bits.ADNREF = 0;              //Connected to Vss
-    ADCON1bits.ADPREF = 0b01;           //Connected to Vref+
+    ADCON1bits.ADPREF = 0b00;           //Connected to VDD (change to Vref in the future 01)
     ADCON1bits.ADFM = 1;                //2's compliment result
     ADCON2bits.CHSN = 0b1111;           //Negative differential input as ADNREF
     ADCON0bits.ADON = 1;                //Turn on the ADC
