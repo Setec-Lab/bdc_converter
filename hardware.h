@@ -61,6 +61,9 @@ uint8_t                             dc;             //Duty, check data size
 unsigned char 						spb;			//Baud rate set
 unsigned int            			log_on; 
 
+uint16_t                counting = 0;
+uint8_t                 PWM = 0;
+
 #define		ERR_MAX					4095
 #define		ERR_MIN					-4095
 #define		SET_VOLTAGE(x)			{ vref = x; }
@@ -69,7 +72,7 @@ unsigned int            			log_on;
 #define 	_XTAL_FREQ 				32000000
 #define		BAUD_RATE               9600
 
-#define		V_CHAN                  0b01010 //AN10 (RB1) 
+#define		V_CHAN                  0b00001 //AN1 (RA1) 
 #define		I_CHAN                  0b00000 //AN0 (RA0)
 //#define		T_CHAN                  0b010011 //RC3
 
@@ -102,8 +105,8 @@ unsigned int            			log_on;
 #define     PARAM_DISC()        	{ kp=0.1; ki=0.05; SET_CURRENT(i_disc); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0;  EOCD_count = 4;} //MAYBE THAT THING CHARGE CAN DISAPEAR
 #define     PARAM_DCRES()       	{ kp=0.1; ki=0.05; SET_CURRENT(capacity / 5); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0; dc_res_count = 14;}
 
-#define 	DC_MIN         26		// DC = 1/32 MINIMUM
-#define 	DC_MAX         200		// NEW APPROACH TEST
+#define 	DC_MIN         154		// DC = 0.7 MINIMUM
+#define 	DC_MAX         230		// DC = 0.9 MAX
 
  
 #define     COUNTER        1000

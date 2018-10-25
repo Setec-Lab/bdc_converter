@@ -10,8 +10,6 @@
 #include "state_machine.h"
 
 char const              next_cell_str_main[] = "---------->NEXT_CELL<----------";
-uint16_t                counting = 0;
-uint8_t                 PWM = 0;
 uint8_t                 US_COUNT = 10;  //count 10 because f=10Khz
 uint8_t                 MS_FLAG = 0;
 uint8_t                 SEC = 0;
@@ -30,14 +28,14 @@ void main(void){
     dc_res_count = 0;
     esc = 0;   
     v = 0;
-    kp = 0.01;
-    ki = 0.01;
+    kp = 0.07;
+    ki = 0.03;
     __delay_ms(10);
 
     TRISBbits.TRISB0 = 0;               //Set RB0 as output. led
     ANSELBbits.ANSB0 = 0;               //Digital
     UART_interrupt_enable();
-    PWM = 180;
+    dc = 180;
     TRISC0 = 1;  
     while(1){        
         if(TMR0IF){
@@ -50,9 +48,9 @@ void main(void){
             }
         }    
         if(MS_FLAG){    
-            MS_FLAG = 0;            
-            counting++;            
-            //pid(v, 7000);
+            MS_FLAG = 0;                      
+            counting++; 
+            calculate_avg();  
             if (counting >= 1000){
                 if (LATB0){
                 RB0 = 0;
@@ -66,21 +64,21 @@ void main(void){
 //                if (PWM >= 230){
 //                    PWM = 25;
 //                }else PWM ++;
-                PSMC1DCL = PWM;     
-                PSMC1CONbits.PSMC1LD = 1; //Load Buffer
+                //PSMC1DCL = PWM;     
+                //PSMC1CONbits.PSMC1LD = 1; //Load Buffer
 //                display_value(MIN);
 //                UART_send_string(":");
 //                display_value(SEC);
 //                UART_send_string("\n\r");
                 UART_send_string("D: ");
-                display_value(((unsigned int)PWM*0.3906));    
+                display_value(((unsigned int)dc*0.3906));    
                 UART_send_string("\n\r");
                 UART_send_string("V: ");
-                display_value((unsigned int)v);    
+                display_value((unsigned int)vprom);    
                 UART_send_string("\n\r");
             }
             read_ADC();
-            calculate_avg();      
+            pid(v, 4800);                  
 			//State_Machine();
             //LOG_ON();
             //log_control();
@@ -119,9 +117,10 @@ void interrupt serial_interrupt(void)
         if (esc == 0x1B)
         {
             TRISC0 = 1;                         //Deactivate PWM
-        }else if (esc == 0x72)//+
+        }else if (esc == 0x72)//restart "r"
         {
             TRISC0 = 0;
+            PWM = 180;            
         }else if (esc == 0x61)//a
         {
             PWM++;

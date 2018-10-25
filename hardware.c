@@ -114,9 +114,12 @@ void Init_Registers()
     //INTCONbits.PEIE =1;                 //Pehierals interrupts
     
     //ADC INPUTS//check this after final design
-    TRISB1 = 1;                         //RB1, Voltage 
-    ANSB1 = 1;                          //RA3 analog
-    WPUB1 = 0;                          //Weak pull up Deactivated
+//    TRISB1 = 1;                         //RB1, Voltage 
+//    ANSB1 = 1;                          //RA3 analog
+//    WPUB1 = 0;                          //Weak pull up Deactivated
+    TRISA1 = 1;                         //RA1, Voltage 
+    ANSA1 = 1;                          //RA1 analog
+    WPUA1 = 0;                          //Weak pull up Deactivated
     // TRISA0 = 1;                         //RA0, current sensing input    
     // ANSA0 = 1;                          //RA0 analog      
     // WPUA0 = 0;                          //Weak pull up Deactivated
@@ -138,7 +141,7 @@ void pid(unsigned int feedback, unsigned int setpoint)
 {
 int 	er;
 int		ipid;
-	er = setpoint - feedback;
+	er = feedback - setpoint;
 
 	if(er > ERR_MAX) er = ERR_MAX;
 	if(er < ERR_MIN) er = ERR_MIN;
@@ -157,7 +160,7 @@ int		ipid;
                  
 	dc += ipid; //This is the point in which a mix the PWM with the PID
 
-    dc = 512 - dc;
+    PWM = dc;
     set_DC();
 }
 
@@ -243,7 +246,7 @@ void read_ADC()
     AD_SET_CHAN(V_CHAN);
     AD_CONVERT();
     AD_RESULT();
-    v = ad_res * 1.3086; //* 1.2207;
+    v = ad_res * 1.28662; //* 1.2207;
     
 //    opr = 1.28296 * ad_res;   //1051/1000
 //    v = opr;    //0 as offset   
@@ -286,14 +289,14 @@ void control_loop()
 
 void calculate_avg()
 {
-        if (count)
+        if (counting < 1000)
         {
             // iprom += i;
             vprom += v;
             tprom += dc * 0.390625;
             count--;
         }
-        if (!count)
+        if (counting >= 1000)
         {
             // iprom = iprom / COUNTER;
             vprom = vprom / COUNTER;
