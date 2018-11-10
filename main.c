@@ -36,7 +36,8 @@ void main(void){
     ANSELBbits.ANSB0 = 0;               //Digital
     UART_interrupt_enable();
     dc = 180;
-    TRISC0 = 1;  
+    TRISC0 = 1;
+    TRISC2 = 1; 
     while(1){        
         if(TMR0IF){
             TMR0IF = 0;   
@@ -117,9 +118,11 @@ void interrupt serial_interrupt(void)
         if (esc == 0x1B)
         {
             TRISC0 = 1;                         //Deactivate PWM
+            TRISC2 = 1;
         }else if (esc == 0x72)//restart "r"
         {
             TRISC0 = 0;
+            TRISC2 = 0;
             PWM = 180;            
         }else if (esc == 0x61)//a
         {

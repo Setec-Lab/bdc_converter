@@ -74,14 +74,58 @@ void Init_Registers()
 
     TRISC0 = 1;                         //Set as input
     WPUC0 = 0;                          //Disable weak pull up
-    TRISC1 = 1;                         //Set as input
-    WPUC1 = 0;                          //Disable weak pull up
-    
+    TRISC2 = 1;                         //Set as input
+    WPUC2 = 0;                          //Disable weak pull up
+
+//    //Period
+//    PSMC1PRH = 0x00;                    //No HB
+//    PSMC1PRL = 0xFF;                    //255 + 1 clock cycles for period that is 4us (250KHz) /128
+//    //This set the PWM with 8 bit of resolution
+//    //Duty cycle
+//    PSMC1DCH = 0x00;                    //Duty cycle starts in 0   
+//    PSMC1DCL = 0x00;                    //Duty cycle starts in 0   
+//    //Phase or rising event
+//    PSMC1PHH = 0x00;                    //Rising event starts from the beginning
+//    PSMC1PHL = 0x00;                    //Rising event starts from the beginning
+//    
+//    PSMC1STR0bits.P1STRA = 1;           //Single PWM activated in PSMC1A (RCO))
+//    PSMC1POLbits.P1POLA = 0;            //Active high
+//    PSMC1OENbits.P1OEA = 1;             //PSMC1A activated in PSMC1A (RC0)
+//    
+//    PSMC1PRSbits.P1PRST = 1;            //Period event occurs when PSMC1TMR = PSMC1PR
+//    PSMC1PHSbits.P1PHST = 1;            //Rising edge event occurs when PSMC1TMR = PSMC1PH
+//    PSMC1DCSbits.P1DCST = 1;            //Falling edge event occurs when PSMC1TMR = PSMC1DC
+//    
+
+//    //PSMC1TIE = 1;                       //Enable interrupts for Time Based 
+//    
+//    //PSMC3
+//    PSMC3CON = 0x00;                    //Clear configuration to start 
+//    PSMC3MDL = 0x00;                    //No modulation
+//    PSMC3CLK = 0x01;                    //Driven by 64MHz system clock
+//    //Period
+//    PSMC3PRH = 0x00;  ///2 lag cycles 
+//    PSMC3PRL = 0x7F;  ///127 + 1 clock cycles for active drive that is 180 degrees of lag
+//    //This set the PWM with 8 bit of resolution
+//    //Duty cycle
+//    PSMC3DCH = 0x00; //Shall be reduced 2 lag cycles
+//    PSMC3DCL = 0x00; //Shall be reduced 2 lag cycles
+//    //Phase or rising event
+//    PSMC3PHH = 0x00;                    //Rising event starts from the beginning
+//    PSMC3PHL = 0x00;                    //Rising event starts from the beginning
+//
+//    PSMC3SYNC = 0x81;  ///Sync with PSMC1 Enable and set PSMC1 as source
+//    PSMC3STR0bits.P3STRB = 1;           //Single PWM activated in PSMC3B (RC2))
+//    PSMC3POLbits.P3POLB = 0;            //Active high
+//    PSMC3OENbits.P3OEB = 1;             //PSMC1C activated in PSMC3B (RC2)
+//    
+//    PSMC3PRSbits.P3PRST = 1;            //Period event occurs when PSMC1TMR = PSMC1PR
+//    PSMC3PHSbits.P3PHST = 1;            //Rising edge event occurs when PSMC1TMR = PSMC1PH
+//    PSMC3DCSbits.P3DCST = 1;            //Falling edge event occurs when PSMC1TMR = PSMC1DC
+
     PSMC1CON = 0x00;                    //Clear configuration to start 
     PSMC1MDL = 0x00;                    //No modulation
     PSMC1CLK = 0x01;                    //Driven by 64MHz system clock
-    //PSMC1CLKbits.P1CSRC = 0b01;         //Driven by 64MHz system clock
-    //PSMC1CLKbits.P1CPRE = 0b00;         //No prescaler (64MHz)
     //Period
     PSMC1PRH = 0x00;                    //No HB
     PSMC1PRL = 0xFF;                    //255 + 1 clock cycles for period that is 4us (250KHz) /128
@@ -90,23 +134,51 @@ void Init_Registers()
     PSMC1DCH = 0x00;                    //Duty cycle starts in 0   
     PSMC1DCL = 0x00;                    //Duty cycle starts in 0   
     //Phase or rising event
-    PSMC1PHH = 0x00;                    //Rising event starts from the beginning
-    PSMC1PHL = 0x00;                    //Rising event starts from the beginning
+    PSMC1PHH = 0x00;                    //Rising event is used to drive the period of the slaves
+    PSMC1PHL = 0x7F - 0x2;              //Rising event is used to drive the period of the slaves but lags in 2 cycles (8 instructions)
     
-    PSMC1STR0bits.P1STRA = 1;           //Single PWM activated in PSMC1A (RCO))
+    PSMC1STR0bits.P1STRA = 1;           //Single PWM activated in PSMC1A (RC0)
     PSMC1POLbits.P1POLA = 0;            //Active high
-    PSMC1OENbits.P1OEA = 1;             //PSMC1A activated in PSMC1A (RC0)
+    PSMC1OENbits.P1OEA = 1;             //PSMC1 activated in PSMC1A (RC0)
     
     PSMC1PRSbits.P1PRST = 1;            //Period event occurs when PSMC1TMR = PSMC1PR
     PSMC1PHSbits.P1PHST = 1;            //Rising edge event occurs when PSMC1TMR = PSMC1PH
     PSMC1DCSbits.P1DCST = 1;            //Falling edge event occurs when PSMC1TMR = PSMC1DC
+    P1POFST = 1;  ///Rising event is sync_out
+    PSMC1CON = 0xC0;                    //Enable|Load buffer|Dead band disabled|Single PWM   
     
-    PSMC1CON = 0x80;                    //Enable|Load Buffer|Dead band disabled|Single PWM
-    //PSMC1TIE = 1;                       //Enable interrupts for Time Based 
+    PSMC3CON = 0x00;                    //Clear configuration to start 
+    PSMC3MDL = 0x00;                    //No modulation
+    PSMC3CLK = 0x01;                    //Driven by 64MHz system clock
+    //Period
+    PSMC3PRH = 0x00;                    //No HB
+    PSMC3PRL = 0xFF;                    //255 -2 cycles of delay + 1 clock cycles for period that is 4us (250KHz) /128
+    //This set the PWM with 8 bit of resolution
+    //Duty cycle
+    PSMC3DCH = 0x00;                    //Duty cycle starts in 0   
+    PSMC3DCL = 0x00;                    //Duty cycle starts in 0   
+    //Phase or rising event
+    PSMC3PHH = 0x00;                    //Rising event starts from the beginning
+    PSMC3PHL = 0x00;                    //Rising event starts from the beginning
+    
+    PSMC3STR0bits.P3STRB = 1;           //Single PWM activated in PSMC1A (RC0)
+    PSMC3POLbits.P3POLB = 0;            //Active high
+    PSMC3OENbits.P3OEB = 1;             //PSMC3C activated in PSMC3B (RC2)
+    
+    PSMC3PRSbits.P3PRST = 1;            //Period event occurs when PSMC3TMR = PSMC3PR
+    PSMC3PHSbits.P3PHST = 1;            //Rising edge event occurs when PSMC3TMR = PSMC3PH
+    PSMC3DCSbits.P3DCST = 1;            //Falling edge event occurs when PSMC3TMR = PSMC3DC
+    
+    PSMC3SYNC = 0x01; //Sync with PSMC1 
+    
+    PSMC3CON = 0xC0;                    //Enable|Load buffer|Dead band disabled|Single PWM 
+    
+    
+    
     
     //DEACTIVATE FOR NOW
     TRISC0 = 0;                         //Set RC0 as output
-    //TRISC1 = 0;                         //Set RC0 as output
+    TRISC2 = 0;                         //Set RC2 as output
     
     //---------------------ADC SETTINGS----------------------------------------
     //INTERRUPTS 
@@ -169,8 +241,12 @@ void set_DC()
     if(dc < (DC_MIN+1)) dc = DC_MIN;                //Respect the limits of the increment
     if(dc > (DC_MAX-1)) dc = DC_MAX;
     //dc = 150;
-    PSMC1DCL = dc;     
+    PSMC1DCL = dc; 
+    //PSMC3DCH = ((dc + 0x7F) << 8);
+    //PSMC3DCL = ((dc + 0x7F) & 0xFF); 
+    PSMC3DCL = dc;
     PSMC1CONbits.PSMC1LD = 1; //Load Buffer
+    PSMC3CONbits.PSMC3LD = 1; //Load Buffer
 }
 
 void cc_cv_mode()
