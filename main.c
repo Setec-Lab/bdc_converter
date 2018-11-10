@@ -7,9 +7,7 @@
  */
 
 #include "hardware.h"
-#include "state_machine.h"
 
-char const              next_cell_str_main[] = "---------->NEXT_CELL<----------";
 uint8_t                 US_COUNT = 10;  //count 10 because f=10Khz
 uint8_t                 MS_FLAG = 0;
 uint8_t                 SEC = 0;
@@ -18,14 +16,11 @@ uint8_t                 MIN = 0;
 void main(void){
     Init_Registers();
 	Initialize_Hardware();
-    Init_UART();
-    state = STANDBY;       
+    Init_UART();    
     count = COUNTER; 
     iprom = 0;
     vprom = 0;
     tprom = 0;
-    wait_count = 0;
-    dc_res_count = 0;
     esc = 0;   
     v = 0;
     kp = 0.07;
@@ -35,7 +30,6 @@ void main(void){
     TRISBbits.TRISB0 = 0;               //Set RB0 as output. led
     ANSELBbits.ANSB0 = 0;               //Digital
     UART_interrupt_enable();
-    dc = 180;
     TRISC0 = 1;
     TRISC2 = 1; 
     while(1){        
@@ -61,18 +55,8 @@ void main(void){
                 else{SEC = 0; MIN++;}
                 UART_send_string("LED ON/OFF");
                 LINEBREAK;
-                //PWM from 0.1 to 0.9
-//                if (PWM >= 230){
-//                    PWM = 25;
-//                }else PWM ++;
-                //PSMC1DCL = PWM;     
-                //PSMC1CONbits.PSMC1LD = 1; //Load Buffer
-//                display_value(MIN);
-//                UART_send_string(":");
-//                display_value(SEC);
-//                UART_send_string("\n\r");
                 UART_send_string("D: ");
-                display_value(((unsigned int)dc*0.3906));    
+                display_value(((unsigned int)dc*0.1953));    
                 UART_send_string("\n\r");
                 UART_send_string("V: ");
                 display_value((unsigned int)vprom);    
@@ -122,14 +106,14 @@ void interrupt serial_interrupt(void)
         }else if (esc == 0x72)//restart "r"
         {
             TRISC0 = 0;
-            TRISC2 = 0;
-            PWM = 180;            
+            TRISC2 = 0;          
         }else if (esc == 0x61)//a
         {
-            PWM++;
+            TRISC0 = 0;
+            TRISC2 = 1;
         }else if  (esc == 0x7A)//z
         {
-            PWM--;
+            //nothing
         }else
         {
             esc = 0;

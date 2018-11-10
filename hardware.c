@@ -6,9 +6,7 @@
  * Version control in Git
  */
 #include "hardware.h"
-#include "state_machine.h"
 
-//unsigned int            ad_res;
 char const              comma_str[] = ",";
 char const              in_arr_str[] = "->";
 char const              end_arr_str[] = "<-";
@@ -25,7 +23,7 @@ char const              T_str[] = "T";
 
 void Initialize_Hardware()
 {
-	//CLRWDT();
+	CLRWDT();
 	TMR0IF = 0;                        //Clear timer 0
 	ad_res = 0;                        //Clear ADC result variable
 	cmode = 1;                         //Start in CC mode
@@ -44,20 +42,6 @@ void Init_Registers()
     OSCCONbits.SCS = 0b00;              //Clear to use the result of IRCF
     OSCCONbits.SPLLEN = 1;              //Enable PLL, it gives a problem if is done in the CONFWords
     //System clock set as 32MHz
-    //--------------------OUPUTS FOR RELAYS------------------------------------
-    //TRISA0 = 0;                         //Set RA0 as output. C/D relay
-    //ANSA0 = 0;                          //Digital
-    //TRISA1 = 0;                         //Set RA3 as output.ON/OFF relay
-    //ANSA1 = 0;                          //Digital   
-//    //----------------OUTPUTS FOR CELL SWITCHER------------------------------
-//    TRISAbits.TRISA7 = 0;               //Set RA7 as output. Cell #1
-//    ANSELAbits.ANSA7 = 0;               //Digital
-//    TRISAbits.TRISA6 = 0;               //Set RA6 as output. Cell #2
-//    ANSELAbits.ANSA6 = 0;               //Digital   //DOES NOT EXIST
-//    TRISCbits.TRISC0 = 0;               //Set RC0 as output. Cell #3
-//    ANSELCbits.ANSC0 = 0;               //Digital   //DOES NOT EXIST
-//    TRISCbits.TRISC1 = 0;               //Set RC1 as output. Cell #4
-//    ANSELCbits.ANSC1 = 0;               //Digital   //DOES NOT EXIST
     //-----------TIMER0 FOR CONTROL AND MEASURING LOOP-------------------------
     TRISAbits.TRISA4 = 1;               //Set RA4 as input
     TMR0IE = 0;                         //Disable timer interruptions
@@ -127,15 +111,15 @@ void Init_Registers()
     PSMC1MDL = 0x00;                    //No modulation
     PSMC1CLK = 0x01;                    //Driven by 64MHz system clock
     //Period
-    PSMC1PRH = 0x00;                    //No HB
-    PSMC1PRL = 0xFF;                    //255 + 1 clock cycles for period that is 4us (250KHz) /128
+    PSMC1PRH = 0x01;                    //No HB
+    PSMC1PRL = 0xFF;                    //512 + 1 clock cycles for period that is 8us (125KHz) /128
     //This set the PWM with 8 bit of resolution
     //Duty cycle
     PSMC1DCH = 0x00;                    //Duty cycle starts in 0   
     PSMC1DCL = 0x00;                    //Duty cycle starts in 0   
     //Phase or rising event
     PSMC1PHH = 0x00;                    //Rising event is used to drive the period of the slaves
-    PSMC1PHL = 0x7F - 0x2;              //Rising event is used to drive the period of the slaves but lags in 2 cycles (8 instructions)
+    PSMC1PHL = 0xFF - 0x2;              //Rising event is used to drive the period of the slaves but lags in 2 cycles (8 instructions)
     
     PSMC1STR0bits.P1STRA = 1;           //Single PWM activated in PSMC1A (RC0)
     PSMC1POLbits.P1POLA = 0;            //Active high
@@ -151,8 +135,8 @@ void Init_Registers()
     PSMC3MDL = 0x00;                    //No modulation
     PSMC3CLK = 0x01;                    //Driven by 64MHz system clock
     //Period
-    PSMC3PRH = 0x00;                    //No HB
-    PSMC3PRL = 0xFF;                    //255 -2 cycles of delay + 1 clock cycles for period that is 4us (250KHz) /128
+    PSMC3PRH = 0x01;                    //No HB
+    PSMC3PRL = 0xFF;                    //511 + 1 clock cycles for period that is 8us (125KHz) /128
     //This set the PWM with 8 bit of resolution
     //Duty cycle
     PSMC3DCH = 0x00;                    //Duty cycle starts in 0   
@@ -230,7 +214,7 @@ int		ipid;
 	if(ipid > ERR_MAX) ipid = ERR_MAX;
 	if(ipid < ERR_MIN) ipid = ERR_MIN;
                  
-	dc += ipid; //This is the point in which a mix the PWM with the PID
+	dc += (uint16_t)ipid; //This is the point in which a mix the PWM with the PID
 
     PWM = dc;
     set_DC();
@@ -241,10 +225,12 @@ void set_DC()
     if(dc < (DC_MIN+1)) dc = DC_MIN;                //Respect the limits of the increment
     if(dc > (DC_MAX-1)) dc = DC_MAX;
     //dc = 150;
-    PSMC1DCL = dc; 
-    //PSMC3DCH = ((dc + 0x7F) << 8);
-    //PSMC3DCL = ((dc + 0x7F) & 0xFF); 
-    PSMC3DCL = dc;
+    //PSMC1DCL = dc; 
+    //PSMC3DCL = dc;
+    PSMC1DCH = (uint8_t)(dc >> 8);
+    PSMC1DCL = (uint8_t)(dc & 0xFF); 
+    PSMC3DCH = (uint8_t)(dc >> 8);
+    PSMC3DCL = (uint8_t)(dc & 0xFF);     
     PSMC1CONbits.PSMC1LD = 1; //Load Buffer
     PSMC3CONbits.PSMC3LD = 1; //Load Buffer
 }
@@ -267,20 +253,6 @@ void log_control()
 {
         if (!count)
         {
-            if (wait_count < wait_time && wait_count > 1)
-            {   
-                LINEBREAK;
-                UART_send_string(in_wait_str);
-                display_value(wait_count);
-                UART_send_string(end_wait_str);             
-            }
-            if (wait_count) wait_count--;
-            /*if (dc_res_count)
-            {
-                UART_send_string(hip_str);
-                display_value(dc_res_count);
-                UART_send_string(hip_str);               
-            }*/
             if (log_on)
             {
                 LINEBREAK;
@@ -300,7 +272,7 @@ void log_control()
                 // display_value(iprom*10);   
                 UART_send_string(comma_str);
                 UART_send_string(T_str);
-                display_value(dc);
+                display_value((unsigned int)(dc/512));
                 //display_value(tprom);  
                 //UART_send_string(comma_str); //
                 //display_value(t);           //

@@ -57,12 +57,12 @@ int 								pp;
 int 								pi;
 float 								kp;				//Proportional constant, seems too big data type
 float 								ki;				//Integral constant, seems too big data type
-uint8_t                             dc;             //Duty, check data size
+uint16_t                            dc;             //Duty, check data size
 unsigned char 						spb;			//Baud rate set
 unsigned int            			log_on; 
 
 uint16_t                counting = 0;
-uint8_t                 PWM = 0;
+uint16_t                 PWM = 0;
 
 #define		ERR_MAX					4095
 #define		ERR_MIN					-4095
@@ -105,8 +105,8 @@ uint8_t                 PWM = 0;
 #define     PARAM_DISC()        	{ kp=0.1; ki=0.05; SET_CURRENT(i_disc); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0;  EOCD_count = 4;} //MAYBE THAT THING CHARGE CAN DISAPEAR
 #define     PARAM_DCRES()       	{ kp=0.1; ki=0.05; SET_CURRENT(capacity / 5); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0; dc_res_count = 14;}
 
-#define 	DC_MIN         154		// DC = 0.7 MINIMUM
-#define 	DC_MAX         230		// DC = 0.9 MAX
+#define 	DC_MIN         358		// DC = 0.7 MINIMUM
+#define 	DC_MAX         461		// DC = 0.9 MAX
 
  
 #define     COUNTER        1000
