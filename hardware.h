@@ -1,14 +1,19 @@
-/* Hardware related definitions for Charge and Discharge System. */
-
-/* Kyutech Institute of Technology. LaSEINE. Supervisor: Mengu CHO.*/
-/* 
- * File:  hardware.h 
- * Author: Juan J. Rojas.
- * Comments: Version control under Git
+/**
+ * @file hardware.h
+ * @author Juan J. Rojas
+ * @date 10 Nov 2018
+ * @brief Definitions for the BDC prototype controller
+ * @par Institution:
+ * LaSEINE / CeNT. Kyushu Institute of Technology.
+ * @par Mail (after leaving Kyutech):
+ * juan.rojas@tec.ac.cr
+ * @par Git repository:
+ * https://bitbucket.org/juanjorojash/bdc_prototype/src/master
  */
 
-
-// PIC16F1786 Configuration Bit Settings
+#ifndef HARDWARE_H
+    #define HARDWARE_H
+    // PIC16F1786 Configuration Bit Settings
 
     // 'C' source line config statements
     #pragma config FOSC = INTOSC    // Oscillator Selection (INTOSC oscillator: I/O function on CLKIN pin)
@@ -22,6 +27,7 @@
     #pragma config IESO = ON        // Internal/External Switchover (Internal/External Switchover mode is enabled)
     #pragma config FCMEN = ON       // Fail-Safe Clock Monitor Enable (Fail-Safe Clock Monitor is enabled)
 
+    // CONFIG2
     #pragma config WRT = OFF        // Flash Memory Self-Write Protection (Write protection off)
     #pragma config VCAPEN = OFF     // Voltage Regulator Capacitor Enable bit (Vcap functionality is disabled on RA6.)
     #pragma config PLLEN = OFF      // PLL Enable (4x PLL disabled)
@@ -30,14 +36,13 @@
     #pragma config LPBOR = OFF      // Low Power Brown-Out Reset Enable Bit (Low power brown-out is disabled)
     #pragma config LVP = OFF        // Low-Voltage Programming Enable (Low-voltage programming disabled)//IF THIS IN ON MCLR is always enabled
 
-// #pragma config statements should precede project file includes.
-// Use project enums instead of #define for ON and OFF.
-
-#include <xc.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdint.h>         //To include uint8_t and uint16_t
+    #include <xc.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <math.h>
+    #include <stdint.h> // To include uint8_t and uint16_t
+    #include <string.h>
+    #include <stdbool.h> // Include bool type
 
 unsigned int 						ad_res;
 unsigned int						v;  //ADDED
@@ -131,3 +136,5 @@ char UART_get_char(void);
 void UART_send_string(char* st_pt);
 void Cell_ON(void);
 void Cell_OFF(void);
+
+#endif /* HARDWARE_H*/

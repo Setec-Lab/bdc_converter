@@ -1,9 +1,14 @@
-/* Main loop for Charge and Discharge System. */
-/* Kyutech Institute of Technology. LaSEINE. Supervisor: Mengu CHO.*/
-/* 
- * File:  main.c 
- * Author: Juan J. Rojas
- * Version control: Git
+/**
+ * @file main.c
+ * @author Juan J. Rojas
+ * @date 10 Nov 2018
+ * @brief main loop for the BDC prototype controller.
+ * @par Institution:
+ * LaSEINE / CeNT. Kyushu Institute of Technology.
+ * @par Mail (after leaving Kyutech):
+ * juan.rojas@tec.ac.cr
+ * @par Git repository:
+ * https://bitbucket.org/juanjorojash/bdc_prototype/src/master
  */
 
 #include "hardware.h"

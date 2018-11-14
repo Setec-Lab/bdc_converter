@@ -1,10 +1,16 @@
-/* Hardware related source file for Charge and Discharge System. */
-/* Kyutech Institute of Technology. LaSEINE. Supervisor: Mengu CHO.*/
-/* 
- * File:  hardware.c 
- * Author: Juan J. Rojas.
- * Version control in Git
+/**
+ * @file harware.c
+ * @author Juan J. Rojas
+ * @date 10 Nov 2018
+ * @brief function definitions for the BDC prototype controller.
+ * @par Institution:
+ * LaSEINE / CeNT. Kyushu Institute of Technology.
+ * @par Mail (after leaving Kyutech):
+ * juan.rojas@tec.ac.cr
+ * @par Git repository:
+ * https://bitbucket.org/juanjorojash/bdc_prototype/src/master
  */
+
 #include "hardware.h"
 
 char const              comma_str[] = ",";
@@ -60,52 +66,6 @@ void Init_Registers()
     WPUC0 = 0;                          //Disable weak pull up
     TRISC2 = 1;                         //Set as input
     WPUC2 = 0;                          //Disable weak pull up
-
-//    //Period
-//    PSMC1PRH = 0x00;                    //No HB
-//    PSMC1PRL = 0xFF;                    //255 + 1 clock cycles for period that is 4us (250KHz) /128
-//    //This set the PWM with 8 bit of resolution
-//    //Duty cycle
-//    PSMC1DCH = 0x00;                    //Duty cycle starts in 0   
-//    PSMC1DCL = 0x00;                    //Duty cycle starts in 0   
-//    //Phase or rising event
-//    PSMC1PHH = 0x00;                    //Rising event starts from the beginning
-//    PSMC1PHL = 0x00;                    //Rising event starts from the beginning
-//    
-//    PSMC1STR0bits.P1STRA = 1;           //Single PWM activated in PSMC1A (RCO))
-//    PSMC1POLbits.P1POLA = 0;            //Active high
-//    PSMC1OENbits.P1OEA = 1;             //PSMC1A activated in PSMC1A (RC0)
-//    
-//    PSMC1PRSbits.P1PRST = 1;            //Period event occurs when PSMC1TMR = PSMC1PR
-//    PSMC1PHSbits.P1PHST = 1;            //Rising edge event occurs when PSMC1TMR = PSMC1PH
-//    PSMC1DCSbits.P1DCST = 1;            //Falling edge event occurs when PSMC1TMR = PSMC1DC
-//    
-
-//    //PSMC1TIE = 1;                       //Enable interrupts for Time Based 
-//    
-//    //PSMC3
-//    PSMC3CON = 0x00;                    //Clear configuration to start 
-//    PSMC3MDL = 0x00;                    //No modulation
-//    PSMC3CLK = 0x01;                    //Driven by 64MHz system clock
-//    //Period
-//    PSMC3PRH = 0x00;  ///2 lag cycles 
-//    PSMC3PRL = 0x7F;  ///127 + 1 clock cycles for active drive that is 180 degrees of lag
-//    //This set the PWM with 8 bit of resolution
-//    //Duty cycle
-//    PSMC3DCH = 0x00; //Shall be reduced 2 lag cycles
-//    PSMC3DCL = 0x00; //Shall be reduced 2 lag cycles
-//    //Phase or rising event
-//    PSMC3PHH = 0x00;                    //Rising event starts from the beginning
-//    PSMC3PHL = 0x00;                    //Rising event starts from the beginning
-//
-//    PSMC3SYNC = 0x81;  ///Sync with PSMC1 Enable and set PSMC1 as source
-//    PSMC3STR0bits.P3STRB = 1;           //Single PWM activated in PSMC3B (RC2))
-//    PSMC3POLbits.P3POLB = 0;            //Active high
-//    PSMC3OENbits.P3OEB = 1;             //PSMC1C activated in PSMC3B (RC2)
-//    
-//    PSMC3PRSbits.P3PRST = 1;            //Period event occurs when PSMC1TMR = PSMC1PR
-//    PSMC3PHSbits.P3PHST = 1;            //Rising edge event occurs when PSMC1TMR = PSMC1PH
-//    PSMC3DCSbits.P3DCST = 1;            //Falling edge event occurs when PSMC1TMR = PSMC1DC
 
     PSMC1CON = 0x00;                    //Clear configuration to start 
     PSMC1MDL = 0x00;                    //No modulation
