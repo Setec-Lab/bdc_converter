@@ -48,10 +48,12 @@ unsigned int 						ad_res;
 unsigned int						v;  //ADDED
 unsigned int 						i;  //ADDED
 unsigned int 						t;  //ADDED
+unsigned int                        b;  //battery
 unsigned int 						count;             //ADDED
 unsigned short long   				iprom;
 unsigned short long 				vprom;
 unsigned short long					tprom;
+unsigned short long                 bprom;
 unsigned int 						vref;
 unsigned int 						iref;
 char 								cmode;
@@ -79,7 +81,7 @@ uint16_t                 PWM = 0;
 
 #define		V_CHAN                  0b00001 //AN1 (RA1) 
 #define		I_CHAN                  0b00000 //AN0 (RA0)
-//#define		T_CHAN                  0b010011 //RC3
+#define		B_CHAN                  0b00010 //AN2 (RA2)
 
 #define		CELL1_ON				PORTAbits.RA7 = 1
 #define		CELL2_ON				PORTAbits.RA6 = 1

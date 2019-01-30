@@ -58,13 +58,17 @@ void main(void){
                 counting = 0;
                 if(SEC < 59) SEC++;
                 else{SEC = 0; MIN++;}
+                UART_send_string("\n\r");
                 UART_send_string("LED ON/OFF");
-                LINEBREAK;
+                UART_send_string("\n\r");
                 UART_send_string("D: ");
                 display_value(((unsigned int)dc*0.1953));    
                 UART_send_string("\n\r");
                 UART_send_string("V: ");
                 display_value((unsigned int)vprom);    
+                UART_send_string("\n\r");
+                UART_send_string("B: ");
+                display_value((unsigned int)bprom);    
                 UART_send_string("\n\r");
             }
             read_ADC();
@@ -88,22 +92,6 @@ void interrupt serial_interrupt(void)
         }
         
         while(RCIF) esc = RC1REG; //receive the value and put it to esc
-
-//        if (esc == 0x1B)
-//        {
-//            state = STANDBY;
-//            esc = 0;
-//            wait_count = 0;
-//            dc_res_count = 0;
-//        }else if  (esc == 110)
-//        {
-//            STOP_CONVERTER();
-//            LINEBREAK;
-//            UART_send_string(next_cell_str_main);
-//            LINEBREAK;
-//            __delay_ms(50);
-//            cell_count++;
-//            state = IDLE;  
         if (esc == 0x1B)
         {
             TRISC0 = 1;                         //Deactivate PWM

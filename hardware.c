@@ -136,6 +136,10 @@ void Init_Registers()
     TRISA1 = 1;                         //RA1, Voltage 
     ANSA1 = 1;                          //RA1 analog
     WPUA1 = 0;                          //Weak pull up Deactivated
+    
+    TRISA2 = 1;                         //RA2, Batt Voltage 
+    ANSA2 = 1;                          //RA2 analog
+    WPUA2 = 0;                          //Weak pull up Deactivated
     // TRISA0 = 1;                         //RA0, current sensing input    
     // ANSA0 = 1;                          //RA0 analog      
     // WPUA0 = 0;                          //Weak pull up Deactivated
@@ -256,6 +260,11 @@ void read_ADC()
     AD_RESULT();
     v = ad_res * 1.28662; //* 1.2207;
     
+    AD_SET_CHAN(B_CHAN);
+    AD_CONVERT();
+    AD_RESULT();
+    b = ad_res * 1.28662; //* 1.2207;
+    
 //    opr = 1.28296 * ad_res;   //1051/1000
 //    v = opr;    //0 as offset   
     // AD_SET_CHAN(I_CHAN);
@@ -302,6 +311,7 @@ void calculate_avg()
             // iprom += i;
             vprom += v;
             tprom += dc * 0.390625;
+            bprom += b;
             count--;
         }
         if (counting >= 1000)
@@ -309,6 +319,7 @@ void calculate_avg()
             // iprom = iprom / COUNTER;
             vprom = vprom / COUNTER;
             tprom = tprom / COUNTER;
+            bprom = bprom / COUNTER; 
         }      
 }
 
