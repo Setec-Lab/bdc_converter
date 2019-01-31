@@ -26,6 +26,7 @@ void main(void){
     iprom = 0;
     vprom = 0;
     tprom = 0;
+    vref = 4800;
     esc = 0;   
     v = 0;
     kp = 0.07;
@@ -70,10 +71,12 @@ void main(void){
                 UART_send_string("B: ");
                 display_value((unsigned int)bprom);    
                 UART_send_string("\n\r");
+                if (b < 4150 & vref > 4800) vref -= 2;
             }
             read_ADC();
-            pid(v, 4800);                  
-			//State_Machine();
+            pid(v, vref);
+            if (b >= 4150) vref +=1;
+            //State_Machine();
             //LOG_ON();
             //log_control();
 		}        
