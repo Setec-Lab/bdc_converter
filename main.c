@@ -117,5 +117,6 @@ void interrupt serial_interrupt(void)
         UART_send_string("\n\r REC: \n\r");
         UART_send_char(esc);
         UART_send_string("\n\r");
+        vref = 4800;
     }    
 }
