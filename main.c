@@ -71,7 +71,7 @@ void main(void){
                 UART_send_string("B: ");
                 display_value((unsigned int)bprom);    
                 UART_send_string("\n\r");
-                if (b < 4150 & vref > 4800) vref -= 2;
+                if (b < 4000 & vref > 4800) vref -= 10;
             }
             read_ADC();
             pid(v, vref);

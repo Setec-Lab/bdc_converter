@@ -112,7 +112,7 @@ uint16_t                 PWM = 0;
 #define     PARAM_DISC()        	{ kp=0.1; ki=0.05; SET_CURRENT(i_disc); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0;  EOCD_count = 4;} //MAYBE THAT THING CHARGE CAN DISAPEAR
 #define     PARAM_DCRES()       	{ kp=0.1; ki=0.05; SET_CURRENT(capacity / 5); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0; dc_res_count = 14;}
 
-#define 	DC_MIN         358		// DC = 0.7 MINIMUM
+#define 	DC_MIN         154		// DC = 0.3 MINIMUM
 #define 	DC_MAX         461		// DC = 0.9 MAX
 
  
