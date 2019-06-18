@@ -255,15 +255,15 @@ void log_control()
 void read_ADC()
 {
     unsigned long opr;
-    AD_SET_CHAN(V_CHAN);
+    AD_SET_CHAN(V_CHAN); //Normally will be V_CHAN
     AD_CONVERT();
     AD_RESULT();
-    v = ad_res * 1.28662; //* 1.2207;
+    v = ad_res * 1.2915; // 5290/4096
     
-    AD_SET_CHAN(B_CHAN);
+    AD_SET_CHAN(B_CHAN); //Normally will be B_CHAN
     AD_CONVERT();
     AD_RESULT();
-    b = ad_res * 1.28662; //* 1.2207;
+    b = ad_res * 1.2915; //* 1.2207;
     
 //    opr = 1.28296 * ad_res;   //1051/1000
 //    v = opr;    //0 as offset   
@@ -306,22 +306,29 @@ void control_loop()
 
 void calculate_avg()
 {
-        if (counting < 1000)
-        {
+    switch(counting) 
+    {
+        case 0: /// 
+            //iprom = 0; /// * Make #iprom zero
+            vprom = 0; /// * Make #vprom zero
+            tprom = 0; /// * Make #tprom zero
+            bprom = 0;
+            break;
+        case COUNTER:
+            // iprom = iprom / COUNTER;
+            vprom = vprom / COUNTER-1;
+            tprom = tprom / COUNTER-1;
+            bprom = bprom / COUNTER-1; 
+            break;
+        default:
             // iprom += i;
             vprom += v;
             tprom += dc * 0.390625;
             bprom += b;
-            count--;
-        }
-        if (counting >= 1000)
-        {
-            // iprom = iprom / COUNTER;
-            vprom = vprom / COUNTER;
-            tprom = tprom / COUNTER;
-            bprom = bprom / COUNTER; 
-        }      
+    }            
 }
+
+
 
 //**Beginning of the UART related functions. 
 void Init_UART()

@@ -50,9 +50,9 @@ void main(void){
         }    
         if(MS_FLAG){    
             MS_FLAG = 0;                      
-            counting++; 
             calculate_avg();  
-            if (counting >= 1000){
+            counting++; 
+            if (counting > 1000){
                 if (LATB0){
                 RB0 = 0;
                 }else RB0 = 1; 
@@ -71,11 +71,17 @@ void main(void){
                 UART_send_string("B: ");
                 display_value((unsigned int)bprom);    
                 UART_send_string("\n\r");
-                if (b < 4000 & vref > 4800) vref -= 10;
+                if ((bprom < 4150) && (vref > 4800)) vref -= 2;
+                if (bprom < 2500)
+                {
+                    TRISC0 = 1;                         //Deactivate PWM
+                    TRISC2 = 1;
+                }
             }
             read_ADC();
             pid(v, vref);
-            if (b >= 4150) vref +=1;
+            if ((b >= 4150) && (vref < 5400)) vref +=1;
+
             //State_Machine();
             //LOG_ON();
             //log_control();
@@ -102,7 +108,8 @@ void interrupt serial_interrupt(void)
         }else if (esc == 0x72)//restart "r"
         {
             TRISC0 = 0;
-            TRISC2 = 0;          
+            TRISC2 = 0;      
+            vref = 4800;
         }else if (esc == 0x61)//a
         {
             TRISC0 = 0;
@@ -117,6 +124,5 @@ void interrupt serial_interrupt(void)
         UART_send_string("\n\r REC: \n\r");
         UART_send_char(esc);
         UART_send_string("\n\r");
-        vref = 4800;
     }    
 }
