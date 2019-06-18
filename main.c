@@ -35,7 +35,7 @@ void main(void){
 
     TRISBbits.TRISB0 = 0;               //Set RB0 as output. led
     ANSELBbits.ANSB0 = 0;               //Digital
-    UART_interrupt_enable();
+    Interrupt_enable();
     TRISC0 = 1;
     TRISC2 = 1; 
     while(1){        
@@ -78,9 +78,7 @@ void main(void){
                     TRISC2 = 1;
                 }
             }
-            read_ADC();
-            pid(v, vref);
-            if ((b >= 4150) && (vref < 5400)) vref +=1;
+
 
             //State_Machine();
             //LOG_ON();
@@ -89,9 +87,17 @@ void main(void){
 	}
 }
 
-void interrupt serial_interrupt(void) 
+void interrupt ISR(void) 
 {
-    
+    if(TMR1IF)
+    {
+        TMR1H = 0xE0;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
+        TMR1L = 0xC0;//TMR1 counts: 8000 x 0.125us = 1ms
+        PIR1bits.TMR1IF= 0; //Clear timer1 interrupt flag
+        read_ADC();
+        pid(v, vref);
+        if ((b >= 4150) && (vref < 5400)) vref +=1;
+    }
     if(RCIF)
     {
         if(RC1STAbits.OERR) // check for Error 
@@ -124,5 +130,5 @@ void interrupt serial_interrupt(void)
         UART_send_string("\n\r REC: \n\r");
         UART_send_char(esc);
         UART_send_string("\n\r");
-    }    
+    }   
 }

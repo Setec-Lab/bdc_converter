@@ -58,6 +58,21 @@ void Init_Registers()
     TMR0 = 0x9E;                        //Counter set to 255 - 100 + 2 (delay for sync) = 157
     //Timer set to 32/4/8/100 = 10kHz
     
+    //TIMER 1 for control usign interruption
+
+    /* Preload TMR1 register pair for 1us overflow */
+    /* T1OSCEN = 1, nT1SYNC = 1, TMR1CS = 0 and TMR1ON = 1*/
+    T1CONbits.nT1SYNC = 1;     //Synchronized
+    T1CONbits.T1OSCEN = 1;
+    T1CONbits.TMR1ON = 1;       //ON
+    T1GCONbits.TMR1GE = 0;      //Dont care about gate
+    T1CONbits.TMR1CS = 0b00;       //FOSC/4
+    T1CONbits.T1CKPS0 = 0;
+    T1CONbits.T1CKPS1 = 0;
+    TMR1H = 0xE0;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
+    TMR1L = 0xC0;//TMR1 counts: 8000 x 0.125us = 1ms
+    PIR1bits.TMR1IF= 0; //Clear timer1 interrupt flag
+
     //---------------------PSMC/PWM SETTING------------------------------------
     //TRISA4 = 1;                         //[Temporary]Set RA4 as input to let it drive from RB3.
     //WPUA4 = 0;                          //Disable WPU for RA4.  
@@ -117,17 +132,14 @@ void Init_Registers()
     
     PSMC3CON = 0xC0;                    //Enable|Load buffer|Dead band disabled|Single PWM 
     
-    
-    
-    
     //DEACTIVATE FOR NOW
     TRISC0 = 0;                         //Set RC0 as output
     TRISC2 = 0;                         //Set RC2 as output
     
     //---------------------ADC SETTINGS----------------------------------------
     //INTERRUPTS 
-    //PIE1bits.ADIE = 1;                  //Activate interrupts
-    //INTCONbits.PEIE =1;                 //Pehierals interrupts
+    //PIE1bits.ADIE = 1;                  //Activate interrupts  //THis is part of a function  now
+    //INTCONbits.PEIE =1;                 //Pehierals interrupts /THis is part of a function  now
     
     //ADC INPUTS//check this after final design
 //    TRISB1 = 1;                         //RB1, Voltage 
@@ -365,12 +377,13 @@ void Init_UART()
     //INTERRUPTS
 }
 
-void UART_interrupt_enable()
+void Interrupt_enable()
 {
-    while(RCIF){                //clear the reception register
+    while(RCIF){                //clear the reception register of UART
         esc = RC1REG;
         esc = 0;
     }
+    PIR1bits.TMR1IF = 0;        //clear timer1 flag
     RCIE = 1;                   //enable reception interrupts
     TXIE = 0;                   //disable transmision interrupts
     PEIE = 1;                   //enable peripherals interrupts

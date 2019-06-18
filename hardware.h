@@ -132,7 +132,7 @@ void char_disc(void);
 void control_loop(void);
 void calculate_avg(void);
 void Init_UART(void);
-void UART_interrupt_enable(void);
+void Interrupt_enable(void);
 void UART_send_char(char bt);
 char UART_get_char(void); 
 void UART_send_string(char* st_pt);
