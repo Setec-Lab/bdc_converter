@@ -13,8 +13,6 @@
 
 #include "hardware.h"
 
-uint8_t                 US_COUNT = 10;  //count 10 because f=10Khz
-uint8_t                 MS_FLAG = 0;
 uint8_t                 SEC = 0;
 uint8_t                 MIN = 0;
 
@@ -38,52 +36,33 @@ void main(void){
     Interrupt_enable();
     TRISC0 = 1;
     TRISC2 = 1; 
-    while(1){        
-        if(TMR0IF){
-            TMR0IF = 0;   
-            TMR0 = 0x9E;         
-            US_COUNT --;
-            if (!US_COUNT){
-                US_COUNT = 10;
-                MS_FLAG = 1;
+    while(1){                      
+        if (counting > 1000){
+            if (LATB0){
+            RB0 = 0;
+            }else RB0 = 1; 
+            counting = 0;
+            if(SEC < 59) SEC++;
+            else{SEC = 0; MIN++;}
+            UART_send_string("\n\r");
+            UART_send_string("LED ON/OFF");
+            UART_send_string("\n\r");
+            UART_send_string("D: ");
+            display_value(((unsigned int)dc*0.1953));    
+            UART_send_string("\n\r");
+            UART_send_string("V: ");
+            display_value((unsigned int)vprom);    
+            UART_send_string("\n\r");
+            UART_send_string("B: ");
+            display_value((unsigned int)bprom);    
+            UART_send_string("\n\r");
+            if ((bprom < 4150) && (vref > 4800)) vref -= 2;
+            if (bprom < 2500)
+            {
+                TRISC0 = 1;                         //Deactivate PWM
+                TRISC2 = 1;
             }
-        }    
-        if(MS_FLAG){    
-            MS_FLAG = 0;                      
-            calculate_avg();  
-            counting++; 
-            if (counting > 1000){
-                if (LATB0){
-                RB0 = 0;
-                }else RB0 = 1; 
-                counting = 0;
-                if(SEC < 59) SEC++;
-                else{SEC = 0; MIN++;}
-                UART_send_string("\n\r");
-                UART_send_string("LED ON/OFF");
-                UART_send_string("\n\r");
-                UART_send_string("D: ");
-                display_value(((unsigned int)dc*0.1953));    
-                UART_send_string("\n\r");
-                UART_send_string("V: ");
-                display_value((unsigned int)vprom);    
-                UART_send_string("\n\r");
-                UART_send_string("B: ");
-                display_value((unsigned int)bprom);    
-                UART_send_string("\n\r");
-                if ((bprom < 4150) && (vref > 4800)) vref -= 2;
-                if (bprom < 2500)
-                {
-                    TRISC0 = 1;                         //Deactivate PWM
-                    TRISC2 = 1;
-                }
-            }
-
-
-            //State_Machine();
-            //LOG_ON();
-            //log_control();
-		}        
+        }	  
 	}
 }
 
@@ -94,6 +73,8 @@ void interrupt ISR(void)
         TMR1H = 0xE0;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
         TMR1L = 0xC0;//TMR1 counts: 8000 x 0.125us = 1ms
         PIR1bits.TMR1IF= 0; //Clear timer1 interrupt flag
+        calculate_avg();  
+        counting++; 
         read_ADC();
         pid(v, vref);
         if ((b >= 4150) && (vref < 5400)) vref +=1;

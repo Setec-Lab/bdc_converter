@@ -50,10 +50,10 @@ unsigned int 						i;  //ADDED
 unsigned int 						t;  //ADDED
 unsigned int                        b;  //battery
 unsigned int 						count;             //ADDED
-unsigned short long   				iprom;
-unsigned short long 				vprom;
-unsigned short long					tprom;
-unsigned short long                 bprom;
+uint24_t              				iprom;
+uint24_t                			vprom;
+uint24_t            				tprom;
+uint24_t                            bprom;
 unsigned int 						vref;
 unsigned int 						iref;
 char 								cmode;
@@ -127,16 +127,11 @@ void set_DC(void);
 void read_ADC(void);
 void log_control(void);
 void display_value(unsigned int value);
-void cc_cv_mode(void);
-void char_disc(void);
-void control_loop(void);
 void calculate_avg(void);
 void Init_UART(void);
 void Interrupt_enable(void);
 void UART_send_char(char bt);
 char UART_get_char(void); 
 void UART_send_string(char* st_pt);
-void Cell_ON(void);
-void Cell_OFF(void);
 
 #endif /* HARDWARE_H*/

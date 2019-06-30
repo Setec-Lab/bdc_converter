@@ -211,19 +211,7 @@ void set_DC()
     PSMC3CONbits.PSMC3LD = 1; //Load Buffer
 }
 
-void cc_cv_mode()
-{
-    if (!count)
-    {
-        if(v > vref && cmode == 1)
-        {
-            pi = 0;
-            cmode = 0;
-            kp = 3;
-            ki = 0.5;
-        }
-    }         
-}
+
 
 void log_control()
 {
@@ -304,17 +292,6 @@ void read_ADC()
 }
 //***PROBABLY THIS IS NOT GOOD ANYMORE BECAUSE OF MANUAL AUTO OPERATION
 
-void control_loop()
-{
-    cc_cv_mode();
-	if(!cmode)
-    {
-        pid(v, vref);
-    }else
-    {
-        pid(i, iref);
-    }
-}
 
 void calculate_avg()
 {
@@ -429,41 +406,4 @@ void display_value(unsigned int value)
     utoa(buffer,value,10);  
   
     UART_send_string(buffer);
-}
-
-void Cell_ON()
-{
-//    if (cell_count == 49)
-//    {
-//        CELL1_ON;
-//        CELL2_OFF;
-//        CELL3_OFF;
-//        CELL4_OFF;
-//    }else if (cell_count == 50)
-//    {
-//        CELL1_OFF;
-//        CELL2_ON;
-//        CELL3_OFF;
-//        CELL4_OFF;        
-//    }else if (cell_count == 51)
-//    {
-//        CELL1_OFF;
-//        CELL2_OFF;
-//        CELL3_ON;
-//        CELL4_OFF;        
-//    }else if (cell_count == 52)
-//    {
-//        CELL1_OFF;
-//        CELL2_OFF;
-//        CELL3_OFF;
-//        CELL4_ON;        
-//    }
-}
-
-void Cell_OFF()
-{
-//    CELL1_OFF;
-//    CELL2_OFF;
-//    CELL3_OFF;
-//    CELL4_OFF;
 }
