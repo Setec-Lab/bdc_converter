@@ -85,7 +85,8 @@ void initialize()
     ADCON0bits.ADRMD = 0; /// * 12 bits result
     ADCON1bits.ADCS = 0b010; /// * Clock selected as FOSC/32
     ADCON1bits.ADNREF = 0; /// * Connected to Vss
-    ADCON1bits.ADPREF = 0b01; /// * Connected to Vref+
+    //THIS IS THE CORRECT //ADCON1bits.ADPREF = 0b01; /// * Connected to Vref+
+    ADCON1bits.ADPREF = 0b00; /// * Connected to VDD
     ADCON1bits.ADFM = 1; /// * 2's compliment result
     ADCON2bits.CHSN = 0b1111; /// * Negative differential input as ADNREF
     ADCON0bits.ADON = 1; /// * Turn on the ADC
@@ -123,7 +124,7 @@ void initialize()
 */
 void control_loop()
 {   
-    pid(vbus, vref);  /// * The #pid() function is called with @p feedback = #v and @p setpoint = #vref
+    pid(vbus, vbusr);  /// * The #pid() function is called with @p feedback = #v and @p setpoint = #vref
     set_DC(); /// The duty cycle is set by calling the #set_DC() function
 }
 /**@brief This function defines the PI controller

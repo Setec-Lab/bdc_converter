@@ -57,7 +57,11 @@
 #define     CREF                    2000                  
 #define     sCREF                   (uint16_t) ( ( ( CREF * 4096.0 ) / (5000 * 2.5 * 5 ) ) + 0.5 )
 #define     VOC                     5400
-#define     sVOC                    (uint16_t) ( ( ( VOC* 4096.0 ) / 5000 ) + 0.5 )
+#define     sVOC                    (uint16_t) ( ( ( VOC * 4096.0 ) / 5000 ) + 0.5 )
+#define     VBATMIN                 2500
+#define     sVBATMIN                (uint16_t) ( ( ( VBATMIN * 4096.0 ) / 5000 ) + 0.5 )
+#define     VBATMAX                 4150
+#define     sVBATMAX                (uint16_t) ( ( ( VBATMAX * 4096.0 ) / 5000 ) + 0.5 )
 
 #define     COUNTER                 1024
 
@@ -85,10 +89,12 @@ uint16_t                            ibatp = 0;
 uint16_t                            capap = 0;
 uint16_t                            cvref = 4800;
 uint16_t                            ocref = 2000;
-uint16_t                            vref = 0;    
-uint16_t                            ivref = 0; 
+uint16_t                            vbusr = 0;    
+uint16_t                            ivbusr = 0; 
 uint16_t                            iref = 0;
 uint16_t                            voc = 0;
+uint16_t                            vbatmin = 0;
+uint16_t                            vbatmax = 0;
         
 void initialize(void);
 void pid(uint16_t feedback, uint16_t setpoint);
@@ -107,6 +113,6 @@ void timing(void);
 #define     LINEBREAK               {UART_send_char(10); UART_send_char(13);}
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 0; log_on = 0; UART_send_string((char *) "\n\r STOP: \n\r"); }
+#define		STOP_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 0; log_on = 1; UART_send_string((char *) "\n\r STOP: \n\r"); }
 #define  	START_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 1; log_on = 1; UART_send_string((char *) "\n\r START: \n\r"); }
 #endif /* HARDWARE_H*/
