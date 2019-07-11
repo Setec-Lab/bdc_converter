@@ -45,9 +45,8 @@
     #include <stdbool.h> // Include bool type
 
 #define 	_XTAL_FREQ 				32000000
-#define		BAUD_RATE               9600
-#define		ERR_MAX					500
-#define		ERR_MIN					-500
+#define		ERR_MAX					1000
+#define		ERR_MIN					-1000
 #define 	DC_MIN                  103	    // DC = 0.2 MINIMUM
 #define 	DC_MAX                  461		// DC = 0.9 MAX
 #define     KP                      15  ///< Proportional constant divider 
@@ -71,7 +70,7 @@
 
 bool                                SECF = 0;
 uint16_t                            count = COUNTER + 1; ///< Counter that should be cleared every second. Initialized as #COUNTER 
-int24_t                             intacum;   ///< Integral acumulator of PI compensator
+int24_t                             intacum = 0;   ///< Integral acumulator of PI compensator
 uint16_t                            dc = 0;  ///< Duty cycle     
 bool                                log_on = 0; ///< Variable to indicate if the log is activated 
 int16_t                             second = 0; ///< Seconds counter, resetted after 59 seconds.
@@ -113,6 +112,6 @@ void timing(void);
 #define     LINEBREAK               {UART_send_char(10); UART_send_char(13);}
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 0; log_on = 1; UART_send_string((char *) "\n\r STOP: \n\r"); }
-#define  	START_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 1; log_on = 1; UART_send_string((char *) "\n\r START: \n\r"); }
+#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 0; log_on = 1; intacum = 0; conv = 0; UART_send_string((char *) "\n\r STOP: \n\r"); }
+#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 1; log_on = 1; intacum = 0; conv = 1; UART_send_string((char *) "\n\r START: \n\r"); }
 #endif /* HARDWARE_H*/

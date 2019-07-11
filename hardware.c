@@ -62,7 +62,7 @@ void initialize()
     PSMC1PHL = 0x00;                    /// * Rising event starts from the beginning
     P1STRA = 1;            /// * Single PWM activated in PSMC1A (RC0)
     P1POLA = 0;            /// * Active high (RC0)
-    //P1OEC = 1;             /// * PSMC activated in PSMC1C (RC2)
+    P1OEA = 1;             /// * PSMC activated in PSMC1A (RC0)
     P1PRST = 1;            /// * Period event occurs when PSMC1TMR = PSMC1PR
     P1PHST = 1;            /// * Rising edge event occurs when PSMC1TMR = PSMC1PH
     P1DCST = 1;            /// * Falling edge event occurs when PSMC1TMR = PSMC1DC
@@ -139,10 +139,10 @@ void control_loop()
 void pid(uint16_t feedback, uint16_t setpoint)
 { 
 int16_t     er = 0; /// * Define @p er for calculating the error
-int16_t     pi = 0; /// * Define @p pi for storing the PI compesator value
+int16_t     pi = 0; /// * Define @p pi for storing the PI compensator value
 int16_t     prop = 0;
 int16_t     inte = 0;
-    er = (int16_t) (setpoint - feedback); /// * Calculate the error by substracting the @p feedback from the @p setpoint and store it in @p er
+    er = (int16_t) (feedback - setpoint); /// * Calculate the error by substract the @p feedback from the @p setpoint and store it in @p er
     if(er > ERR_MAX) er = ERR_MAX; /// * Make sure error is never above #ERR_MAX
     if(er < ERR_MIN) er = ERR_MIN; /// * Make sure error is never below #ERR_MIN
     prop = er / KP; /// * Calculate #proportional component of compensator
@@ -179,7 +179,7 @@ and could be considered as some future improvement IT IS IMPLEMENTED NOW*/
 vbusp = (uint16_t) ( ( ( vbusp * 5000.0 ) / 4096 ) + 0.5 );
 vbatp = (uint16_t) ( ( ( vbatp * 5000.0 ) / 4096 ) + 0.5 );
 ibatp = (uint16_t) ( ( ( ibatp * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
-if ( ibatp > 0 ) capap += (uint16_t) ( ibatp / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
+//if ( ibatp > 0 ) capap += (uint16_t) ( ibatp / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
     
     if (log_on)
     {
@@ -189,18 +189,24 @@ if ( ibatp > 0 ) capap += (uint16_t) ( ibatp / 360 ) + 0.5; /// * Divide #iprom 
                 if (second < 10) UART_send_char('0'); /// * If #second is smaller than 10 send a '0'
                 display_value_u((uint16_t) second);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbus:"); /// * Send a 'C'
+                UART_send_string((char *) "vbusp:"); /// * Send a 'C'
                 display_value_u(vbusp);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbat:"); /// * Send an 'I'
+                UART_send_string((char *) "vbatp:"); /// * Send an 'I'
                 display_value_u(vbatp);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "ibat:"); /// * Send an 'I'
+                UART_send_string((char *) "ibatp:"); /// * Send an 'I'
                 display_value_u(ibatp);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "cbat:"); /// * Send a 'Q'
+                UART_send_string((char *) "vbusref:"); /// * Send a 'Q'
                 //display_value_u((uint16_t) (dc * 1.933125));
-                display_value_u(capap);
+                display_value_u(vbusr);
+                UART_send_char(','); /// * Send a comma character
+                UART_send_string((char *) "vbus:"); /// * Send a 'Q'
+                display_value_u(vbus);
+                UART_send_char(','); /// * Send a comma character
+                UART_send_string((char *) "dc:"); /// * Send a 'Q'
+                display_value_u((uint16_t) (dc * 1.933125));
                 UART_send_char('<'); /// * Send a '<'
     }
     if (!log_on) RESET_TIME(); /// If #log_on is cleared, call #RESET_TIME()
