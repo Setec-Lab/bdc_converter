@@ -23,6 +23,8 @@ void main(void)
 {
     initialize(); /// * Call the #initialize() function
     __delay_ms(10);
+    TRISBbits.TRISB0 = 0;               //Set RB0 as output. led
+    ANSELBbits.ANSB0 = 0;               //Digital
     interrupt_enable();
     voc = sVOC; 
     ivref = sVREF;
@@ -32,6 +34,8 @@ void main(void)
     {   
         if (SECF) /// * The following tasks are executed every second:
         {     
+            if (RB0) RB0 = 0;
+            else RB0 = 1;
             SECF = 0;
             log_control(); /// *  Then, the log is printed in the serial terminal by calling the #log_control() function
             if ((vbatp < 4150) && (vref > ivref)) vref -= 2;
@@ -80,9 +84,11 @@ void __interrupt() ISR(void)
         {
         case 0x63: /// * If @p recep received a @b "c", then:
             STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
+            TRISC0 = 1;                         /// * Set RC0 as input
             break;
         case 0x73: /// * If @p recep received an @b "s", then:
             START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
+            TRISC0 = 0;                         /// * Set RC0 as output
             vref = 4800;
             break;
         default:

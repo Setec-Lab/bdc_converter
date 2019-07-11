@@ -104,71 +104,9 @@ char UART_get_char(void);
 void UART_send_string(char* st_pt);
 void timing(void);
 
-
- 
-
 #define     LINEBREAK               {UART_send_char(10); UART_send_char(13);}
-
-#define		SET_VOLTAGE(x)			{ vref = x; }
-#define		SET_CURRENT(x)			{ iref = x; }
-
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
-
-
-#define		AD_SET_CHAN(x)          { ADCON0bits.CHS = x; __delay_us(1); }
-#define		AD_CONVERT()            { GO_nDONE = 1; while(GO_nDONE);}
-#define     AD_RESULT()             { ad_res = 0; ad_res = (ADRESL & 0xFF)|((ADRESH << 8) & 0xF00);} 
-
-
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = 0; set_DC(); RA4 = 0; log_on = 0; UART_send_string((char *) "\n\r STOP: \n\r"); }
+#define		STOP_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 0; log_on = 0; UART_send_string((char *) "\n\r STOP: \n\r"); }
 #define  	START_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 1; log_on = 1; UART_send_string((char *) "\n\r START: \n\r"); }
-
-
-
-
-// unsigned int 						ad_res;
-// unsigned int						v;  //ADDED
-// unsigned int 						i;  //ADDED
-// unsigned int 						t;  //ADDED
-// unsigned int                        b;  //battery
-// unsigned int 						count;             //ADDED
-// uint24_t              				iprom;
-// uint24_t                			vprom;
-// uint24_t            				tprom;
-// uint24_t                            bprom;
-// unsigned int 						vref;
-// unsigned int 						iref;
-// char 								cmode;
-// unsigned char 						cc_cv;
-// unsigned int 						second;
-// unsigned char 						esc;
-// int 								pp;
-// int 								pi;
-// float 								kp;				//Proportional constant, seems too big data type
-// float 								ki;				//Integral constant, seems too big data type
-// uint16_t                            dc;             //Duty, check data size
-// unsigned char 						spb;			//Baud rate set
-// unsigned int            			log_on; 
-
-uint16_t                counting = 0;
-uint16_t                 PWM = 0;
-
-char const              comma_str[] = ",";
-char const              in_arr_str[] = "->";
-char const              end_arr_str[] = "<-";
-char const              in_wait_str[] = "------------W-";
-char const              end_wait_str[] = "-W------------";
-char const              hip_str[] = "-";
-char const              in_sta_str[] = "S-";
-char const              end_sta_str[] = "-S";
-char const              C_str[] = "C";
-char const              V_str[] = "V";
-char const              I_str[] = "I";
-char const              T_str[] = "T";
-
-
-
-
-
 #endif /* HARDWARE_H*/

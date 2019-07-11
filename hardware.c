@@ -68,8 +68,8 @@ void initialize()
     P1DCST = 1;            /// * Falling edge event occurs when PSMC1TMR = PSMC1DC
     PSMC1CON = 0x80;                    /// * Enable|Load Buffer|Dead band disabled|Single PWM
     //PSMC1TIE = 1;                       //Enable interrupts for Time Based 
-    WPUC2 = 0; /// * Disable WPU for RC0.
-    TRISC2 = 0;                         /// * Set RC2 as output
+    WPUC0 = 0;                          /// * Disable WPU for RC0.
+    TRISC0 = 1;                         /// * Set RC0 as input for now
     /** @b ADC*/
     /** ADC INPUTS*///check this after final design
     TRISA0 = 1; /// * RA0, IS_BAT
@@ -193,6 +193,9 @@ if ( ibatp > 0 ) capap += (uint16_t) ( ibatp / 360 ) + 0.5; /// * Divide #iprom 
                 UART_send_char(','); /// * Send a comma character
                 UART_send_string((char *) "vbat:"); /// * Send an 'I'
                 display_value_u(vbatp);
+                UART_send_char(','); /// * Send a comma character
+                UART_send_string((char *) "ibat:"); /// * Send an 'I'
+                display_value_u(ibatp);
                 UART_send_char(','); /// * Send a comma character
                 UART_send_string((char *) "cbat:"); /// * Send a 'Q'
                 //display_value_u((uint16_t) (dc * 1.933125));
