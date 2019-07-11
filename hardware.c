@@ -13,397 +13,303 @@
 
 #include "hardware.h"
 
-char const              comma_str[] = ",";
-char const              in_arr_str[] = "->";
-char const              end_arr_str[] = "<-";
-char const              in_wait_str[] = "------------W-";
-char const              end_wait_str[] = "-W------------";
-char const              hip_str[] = "-";
-char const              in_sta_str[] = "S-";
-char const              end_sta_str[] = "-S";
-char const              C_str[] = "C";
-char const              V_str[] = "V";
-char const              I_str[] = "I";
-char const              T_str[] = "T";
-
-
-void Initialize_Hardware()
+/**@brief Function to define initialize the system
+*/
+void initialize()
 {
-	CLRWDT();
-	TMR0IF = 0;                        //Clear timer 0
-	ad_res = 0;                        //Clear ADC result variable
-	cmode = 1;                         //Start in CC mode
-	iref = 0;                  
-	vref = 0;
-	//STOP_CONVERTER();
-}
-
-void Init_Registers()
-{
-    //-----------------------GENERAL-------------------------------------------
-    nWPUEN = 0;           //Allow change of individual WPU
-    //-----------------------SYSTEM CLOCK--------------------------------------
-    //PLL is always enabled because of configuration bits.
-    OSCCONbits.IRCF = 0b1111;           //Set clock to 32MHz (with PLL)
-    OSCCONbits.SCS = 0b00;              //Clear to use the result of IRCF
-    OSCCONbits.SPLLEN = 1;              //Enable PLL, it gives a problem if is done in the CONFWords
-    //System clock set as 32MHz
-    //-----------TIMER0 FOR CONTROL AND MEASURING LOOP-------------------------
-    TRISAbits.TRISA4 = 1;               //Set RA4 as input
-    TMR0IE = 0;                         //Disable timer interruptions
-    TMR0CS = 0;                         //Timer set to internal instruction cycle
-    OPTION_REGbits.PS = 0b010;          //Prescaler set to 8
-    OPTION_REGbits.PSA = 0;             //Prescaler activated
-    TMR0IF = 0;                         //Clear timer flag
-    TMR0 = 0x9E;                        //Counter set to 255 - 100 + 2 (delay for sync) = 157
-    //Timer set to 32/4/8/100 = 10kHz
-    
-    //TIMER 1 for control usign interruption
-
-    /* Preload TMR1 register pair for 1us overflow */
+    /** @b GENERAL*/
+    CLRWDT(); /// * Clear WDT by calling @p CLRWDT()
+    nWPUEN = 0; /// * Allow change of individual WPU
+    /** @b SYSTEM @b CLOCK*/
+    /** PLL is always enabled because of configuration bits*/
+    OSCCONbits.IRCF = 0b1111; /// * Set clock to 32MHz (with PLL)
+    OSCCONbits.SCS = 0b00; /// * Clock determined by FOSC<2:0> in Configuration Words
+    OSCCONbits.SPLLEN = 1; /// * Enable PLL. According to Errata this shall not be done in the Configuration Words
+    /** @b ENABLE @b OUPUT*/
+    // //PORTC doesn't have ANSELC
+    TRISA4 = 0; /// * Set RA4 as output. Driver enable (DR_EN)
+    ANSA4 = 0; /// * RA4 as digital
+    WPUA4 = 0; /// * Weak pull up deactivated
+    RA4 = 0; /// * Start disabled
+    /** @b TIMER 1 for control and measuring loop using interruption*/
+    /* Preload TMR1 register pair for 1us overflow*/
     /* T1OSCEN = 1, nT1SYNC = 1, TMR1CS = 0 and TMR1ON = 1*/
-    T1CONbits.nT1SYNC = 1;     //Synchronized
-    T1CONbits.T1OSCEN = 1;
-    T1CONbits.TMR1ON = 1;       //ON
-    T1GCONbits.TMR1GE = 0;      //Dont care about gate
-    T1CONbits.TMR1CS = 0b00;       //FOSC/4
-    T1CONbits.T1CKPS0 = 0;
-    T1CONbits.T1CKPS1 = 0;
-    TMR1H = 0xE0;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
-    TMR1L = 0xC0;//TMR1 counts: 8000 x 0.125us = 1ms
-    PIR1bits.TMR1IF= 0; //Clear timer1 interrupt flag
-
-    //---------------------PSMC/PWM SETTING------------------------------------
-    //TRISA4 = 1;                         //[Temporary]Set RA4 as input to let it drive from RB3.
-    //WPUA4 = 0;                          //Disable WPU for RA4.  
-
-    TRISC0 = 1;                         //Set as input
-    WPUC0 = 0;                          //Disable weak pull up
-    TRISC2 = 1;                         //Set as input
-    WPUC2 = 0;                          //Disable weak pull up
-
-    PSMC1CON = 0x00;                    //Clear configuration to start 
-    PSMC1MDL = 0x00;                    //No modulation
-    PSMC1CLK = 0x01;                    //Driven by 64MHz system clock
-    //Period
-    PSMC1PRH = 0x01;                    //No HB
-    PSMC1PRL = 0xFF;                    //512 + 1 clock cycles for period that is 8us (125KHz) /128
-    //This set the PWM with 8 bit of resolution
-    //Duty cycle
-    PSMC1DCH = 0x00;                    //Duty cycle starts in 0   
-    PSMC1DCL = 0x00;                    //Duty cycle starts in 0   
-    //Phase or rising event
-    PSMC1PHH = 0x00;                    //Rising event is used to drive the period of the slaves
-    PSMC1PHL = 0xFF - 0x2;              //Rising event is used to drive the period of the slaves but lags in 2 cycles (8 instructions)
-    
-    PSMC1STR0bits.P1STRA = 1;           //Single PWM activated in PSMC1A (RC0)
-    PSMC1POLbits.P1POLA = 0;            //Active high
-    PSMC1OENbits.P1OEA = 1;             //PSMC1 activated in PSMC1A (RC0)
-    
-    PSMC1PRSbits.P1PRST = 1;            //Period event occurs when PSMC1TMR = PSMC1PR
-    PSMC1PHSbits.P1PHST = 1;            //Rising edge event occurs when PSMC1TMR = PSMC1PH
-    PSMC1DCSbits.P1DCST = 1;            //Falling edge event occurs when PSMC1TMR = PSMC1DC
-    P1POFST = 1;  ///Rising event is sync_out
-    PSMC1CON = 0xC0;                    //Enable|Load buffer|Dead band disabled|Single PWM   
-    
-    PSMC3CON = 0x00;                    //Clear configuration to start 
-    PSMC3MDL = 0x00;                    //No modulation
-    PSMC3CLK = 0x01;                    //Driven by 64MHz system clock
-    //Period
-    PSMC3PRH = 0x01;                    //No HB
-    PSMC3PRL = 0xFF;                    //511 + 1 clock cycles for period that is 8us (125KHz) /128
-    //This set the PWM with 8 bit of resolution
-    //Duty cycle
-    PSMC3DCH = 0x00;                    //Duty cycle starts in 0   
-    PSMC3DCL = 0x00;                    //Duty cycle starts in 0   
-    //Phase or rising event
-    PSMC3PHH = 0x00;                    //Rising event starts from the beginning
-    PSMC3PHL = 0x00;                    //Rising event starts from the beginning
-    
-    PSMC3STR0bits.P3STRB = 1;           //Single PWM activated in PSMC1A (RC0)
-    PSMC3POLbits.P3POLB = 0;            //Active high
-    PSMC3OENbits.P3OEB = 1;             //PSMC3C activated in PSMC3B (RC2)
-    
-    PSMC3PRSbits.P3PRST = 1;            //Period event occurs when PSMC3TMR = PSMC3PR
-    PSMC3PHSbits.P3PHST = 1;            //Rising edge event occurs when PSMC3TMR = PSMC3PH
-    PSMC3DCSbits.P3DCST = 1;            //Falling edge event occurs when PSMC3TMR = PSMC3DC
-    
-    PSMC3SYNC = 0x01; //Sync with PSMC1 
-    
-    PSMC3CON = 0xC0;                    //Enable|Load buffer|Dead band disabled|Single PWM 
-    
-    //DEACTIVATE FOR NOW
-    TRISC0 = 0;                         //Set RC0 as output
-    TRISC2 = 0;                         //Set RC2 as output
-    
-    //---------------------ADC SETTINGS----------------------------------------
-    //INTERRUPTS 
-    //PIE1bits.ADIE = 1;                  //Activate interrupts  //THis is part of a function  now
-    //INTCONbits.PEIE =1;                 //Pehierals interrupts /THis is part of a function  now
-    
-    //ADC INPUTS//check this after final design
-//    TRISB1 = 1;                         //RB1, Voltage 
-//    ANSB1 = 1;                          //RA3 analog
-//    WPUB1 = 0;                          //Weak pull up Deactivated
-    TRISA1 = 1;                         //RA1, Voltage 
-    ANSA1 = 1;                          //RA1 analog
-    WPUA1 = 0;                          //Weak pull up Deactivated
-    
-    TRISA2 = 1;                         //RA2, Batt Voltage 
-    ANSA2 = 1;                          //RA2 analog
-    WPUA2 = 0;                          //Weak pull up Deactivated
-    // TRISA0 = 1;                         //RA0, current sensing input    
-    // ANSA0 = 1;                          //RA0 analog      
-    // WPUA0 = 0;                          //Weak pull up Deactivated
-    // TRISB5 = 1;                         //RB5, voltage sensing input
-    // ANSB5 = 1;                          //RB5 analog
-    // WPUB5 = 0;                          //Weak pull up Deactivated
-    
-    ADCON0bits.ADRMD = 0;               //12 bits result
-    ADCON1bits.ADCS = 0b010;            //Clock selected as FOSC/32
-    ADCON1bits.ADNREF = 0;              //Connected to Vss
-    ADCON1bits.ADPREF = 0b00;           //Connected to VDD (change to Vref in the future 01)
-    ADCON1bits.ADFM = 1;                //2's compliment result
-    ADCON2bits.CHSN = 0b1111;           //Negative differential input as ADNREF
-    ADCON0bits.ADON = 1;                //Turn on the ADC
-    
-}
-
-void pid(unsigned int feedback, unsigned int setpoint)
-{
-int 	er;
-int		ipid;
-	er = feedback - setpoint;
-
-	if(er > ERR_MAX) er = ERR_MAX;
-	if(er < ERR_MIN) er = ERR_MIN;
-    
-	pp = er;
-	pi += er;
-    
-	if(pi > ERR_MAX) pi = ERR_MAX;
-	if(pi < ERR_MIN) pi = ERR_MIN;
-
-	ipid = kp*pp; //Im going to put a constant here only to see
-	ipid += ki*(pi / 256); //It takes 256 instructions to overflow
-    
-	if(ipid > ERR_MAX) ipid = ERR_MAX;
-	if(ipid < ERR_MIN) ipid = ERR_MIN;
-                 
-	dc += (uint16_t)ipid; //This is the point in which a mix the PWM with the PID
-
-    PWM = dc;
-    set_DC();
-}
-
-void set_DC()
-{
-    if(dc < (DC_MIN+1)) dc = DC_MIN;                //Respect the limits of the increment
-    if(dc > (DC_MAX-1)) dc = DC_MAX;
-    //dc = 150;
-    //PSMC1DCL = dc; 
-    //PSMC3DCL = dc;
-    PSMC1DCH = (uint8_t)(dc >> 8);
-    PSMC1DCL = (uint8_t)(dc & 0xFF); 
-    PSMC3DCH = (uint8_t)(dc >> 8);
-    PSMC3DCL = (uint8_t)(dc & 0xFF);     
-    PSMC1CONbits.PSMC1LD = 1; //Load Buffer
-    PSMC3CONbits.PSMC3LD = 1; //Load Buffer
-}
-
-
-
-void log_control()
-{
-        if (!count)
-        {
-            if (log_on)
-            {
-                LINEBREAK;
-                // UART_send_string(in_sta_str);
-                // display_value(state);
-                // UART_send_string(end_sta_str);
-                // UART_send_string(in_arr_str);
-                // UART_send_string(C_str);
-                // display_value(cell_count - 48);
-                // UART_send_string(comma_str);
-                // UART_send_string(V_str);
-                //display_value(v);
-                display_value(vprom*10);
-                UART_send_string(comma_str);
-                // UART_send_string(I_str);
-                // //display_value(i);
-                // display_value(iprom*10);   
-                UART_send_string(comma_str);
-                UART_send_string(T_str);
-                display_value((unsigned int)(dc/512));
-                //display_value(tprom);  
-                //UART_send_string(comma_str); //
-                //display_value(t);           //
-                /*UART_send_string(comma_str);
-                UART_send_string("Inc");
-                display_value(inc);*/
-                UART_send_string(end_arr_str);
-            }
-            count = COUNTER;
-            iprom = 0;
-            vprom = 0;
-            tprom = 0;
-        }
-}
-//THIS ADC IS WORKING NOW
-void read_ADC()
-{
-    unsigned long opr;
-    AD_SET_CHAN(V_CHAN); //Normally will be V_CHAN
-    AD_CONVERT();
-    AD_RESULT();
-    v = ad_res * 1.2915; // 5290/4096
-    
-    AD_SET_CHAN(B_CHAN); //Normally will be B_CHAN
-    AD_CONVERT();
-    AD_RESULT();
-    b = ad_res * 1.2915; //* 1.2207;
-    
-//    opr = 1.28296 * ad_res;   //1051/1000
-//    v = opr;    //0 as offset   
-    // AD_SET_CHAN(I_CHAN);
-    // AD_CONVERT();
-    // AD_RESULT();
-    // i = ad_res * 1.23779;// * 1.2207 this is with 5000/4096;
-//    opr = 1.2207 * ad_res;    
-//    if(opr > 2500UL)
-//    {
-//        opr = opr - 2500UL;
-//    }
-//    else if(i == 2500UL)
-//    {
-//        opr = 0UL;
-//    }
-//    else if(i < 2500UL)
-//    {
-//        opr = 2500UL - opr;
-//    }
-//    //i=i/0.4;       //A mOhms resistor
-//    //i = (200/37) * i; //Hall effect sensor  37/200=0.185
-//    opr = 25UL * opr;
-//    i = opr / 10UL; //HALL EFFECT ACS723LL    
-//    opr = 0UL;     
-}
-//***PROBABLY THIS IS NOT GOOD ANYMORE BECAUSE OF MANUAL AUTO OPERATION
-
-
-void calculate_avg()
-{
-    switch(counting) 
-    {
-        case 0: /// 
-            //iprom = 0; /// * Make #iprom zero
-            vprom = 0; /// * Make #vprom zero
-            tprom = 0; /// * Make #tprom zero
-            bprom = 0;
-            break;
-        case COUNTER:
-            // iprom = iprom / COUNTER;
-            vprom = vprom / COUNTER-1;
-            tprom = tprom / COUNTER-1;
-            bprom = bprom / COUNTER-1; 
-            break;
-        default:
-            // iprom += i;
-            vprom += v;
-            tprom += dc * 0.390625;
-            bprom += b;
-    }            
-}
-
-
-
-//**Beginning of the UART related functions. 
-void Init_UART()
-{
-    //****Setting I/O pins for UART****//
-    TXSEL = 0;      //RC6 selected as TX
-    RXSEL = 0;      //RC7 selected as RX
+    nT1SYNC = 0;     //Synchronized
+    T1OSCEN = 0;
+    TMR1ON = 0;       //ON
+    TMR1GE = 0;      //Dont care about gate
+    TMR1CS0 = 0;       
+    TMR1CS1 = 0;    //FOSC/4
+    T1CKPS0 = 0;
+    T1CKPS1 = 0;
+    TMR1H = 0xE1;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
+    TMR1L = 0x83;//TMR1 counts: 7805 x 0.125us = 0.97562ms
+    /** @b PSMC/PWM @b SETTINGS*/
+    /** Programmable switch mode control (PSMC)*/
+    PSMC1CON = 0x00; /// * Clear PSMC1 configuration to start
+    PSMC1MDL = 0x00; /// * No modulation
+    PSMC1CLK = 0x01; /// * Driven by 64MHz PLL system clock
+    PSMC1PRH = 0x01; /// * Set period high register to 0x01
+    PSMC1PRL = 0xFF; /// * Set period low register to 0xFF
+    /** 511 + 1 clock cycles for period that is 8us (125KHz)*/
+    /** This set the PWM with 9 bit of resolution*/
+    /** Duty cycle*/
+    PSMC1DCH = 0x00;                    // * Set duty cycle high register to 0x00   
+    PSMC1DCL = 0x00;                    // * Set duty cycle low register to 0x00
+    /* Duty cycle starts in 0 */  
+    /** Phase or rising event*/
+    PSMC1PHH = 0x00;                    /// * Rising event starts from the beginning
+    PSMC1PHL = 0x00;                    /// * Rising event starts from the beginning
+    P1STRA = 1;            /// * Single PWM activated in PSMC1A (RC0)
+    P1POLA = 0;            /// * Active high (RC0)
+    //P1OEC = 1;             /// * PSMC activated in PSMC1C (RC2)
+    P1PRST = 1;            /// * Period event occurs when PSMC1TMR = PSMC1PR
+    P1PHST = 1;            /// * Rising edge event occurs when PSMC1TMR = PSMC1PH
+    P1DCST = 1;            /// * Falling edge event occurs when PSMC1TMR = PSMC1DC
+    PSMC1CON = 0x80;                    /// * Enable|Load Buffer|Dead band disabled|Single PWM
+    //PSMC1TIE = 1;                       //Enable interrupts for Time Based 
+    WPUC2 = 0; /// * Disable WPU for RC0.
+    TRISC2 = 0;                         /// * Set RC2 as output
+    /** @b ADC*/
+    /** ADC INPUTS*///check this after final design
+    TRISA0 = 1; /// * RA0, IS_BAT
+    ANSA0 = 1; /// * RA0 analog
+    WPUA0 = 0; /// * Weak pull up deactivated
+    TRISA1 = 1; /// * RA1, VS_BAT
+    ANSA1 = 1; /// * RA1 analog
+    WPUA1 = 0; /// * RA1 weak pull up deactivated
+    TRISA2 = 1; /// * RA2, VS_BUS
+    ANSA2 = 1; /// * RA2 analog
+    WPUA2 = 0; /// * RA2 weak pull up deactivated
+    /** Configs*/
+    ADCON0bits.ADRMD = 0; /// * 12 bits result
+    ADCON1bits.ADCS = 0b010; /// * Clock selected as FOSC/32
+    ADCON1bits.ADNREF = 0; /// * Connected to Vss
+    ADCON1bits.ADPREF = 0b01; /// * Connected to Vref+
+    ADCON1bits.ADFM = 1; /// * 2's compliment result
+    ADCON2bits.CHSN = 0b1111; /// * Negative differential input as ADNREF
+    ADCON0bits.ADON = 1; /// * Turn on the ADC
+    /** @b UART*/
+    //**Setting I/O pins for UART*/
+    TXSEL = 0;      /// * RC6 selected as TX
+    RXSEL = 0;      /// * RC7 selected as RX
     //________I/O pins set __________//
     
     /**Initialize SPBRG register for required 
     baud rate and set BRGH for fast baud_rate**/
-    //spb = ((_XTAL_FREQ/64)/BAUD_RATE) - 1;
     SP1BRGH = 0x00; 
-    SP1BRGL = 51;    
-    
-    BRGH  = 0;  // for high baud_rate
-    BRG16 = 0;  // for 16 bits timer
+    SP1BRGL = 0x8A;    
+    BRGH  = 1;  /// * for high baud_rate
+    BRG16 = 1;  /// * for 16 bits timer
     //_________End of baud_rate setting_________//
     
     //****Enable Asynchronous serial port*******//
-    SYNC  = 0;    // Asynchronous
-    SPEN  = 1;    // Enable serial port pins
+    SYNC  = 0;    /// * Asynchronous
+    SPEN  = 1;    /// * Enable serial port pins
     //_____Asynchronous serial port enabled_______//
-
     //**Lets prepare for transmission & reception**//
-    TXEN  = 1;    // enable transmission
-    CREN  = 1;    // enable reception
+    TXEN  = 1;    /// * enable transmission
+    CREN  = 1;    /// * enable reception
     //__UART module up and ready for transmission and reception__//
-    
     //**Select 8-bit mode**//  
-    TX9   = 0;    // 8-bit reception selected
-    RX9   = 0;    // 8-bit reception mode selected
-    //__8-bit mode selected__//    
-    //INTERRUPTS
+    TX9   = 0;    /// * 8-bit reception selected
+    RX9   = 0;    /// * 8-bit reception mode selected
+    //__8-bit mode selected__/
+    RCIE = 0; /// * Disable UART reception interrupts
+    TXIE = 0; /// * Disable UART transmission interrupts
 }
 
-void Interrupt_enable()
+/**@brief This function is the PI control loop
+*/
+void control_loop()
+{   
+    pid(vbus, vref);  /// * The #pid() function is called with @p feedback = #v and @p setpoint = #vref
+    set_DC(); /// The duty cycle is set by calling the #set_DC() function
+}
+/**@brief This function defines the PI controller
+*  @param   feedback average of measured values for the control variable
+*  @param   setpoint desire controlled output for the variable
+*/
+
+/**@brief This function defines the PI controller
+*  @param   feedback average of measured values for the control variable
+*  @param   setpoint desire controlled output for the variable
+*/
+void pid(uint16_t feedback, uint16_t setpoint)
+{ 
+int16_t     er = 0; /// * Define @p er for calculating the error
+int16_t     pi = 0; /// * Define @p pi for storing the PI compesator value
+int16_t     prop = 0;
+int16_t     inte = 0;
+    er = (int16_t) (setpoint - feedback); /// * Calculate the error by substracting the @p feedback from the @p setpoint and store it in @p er
+    if(er > ERR_MAX) er = ERR_MAX; /// * Make sure error is never above #ERR_MAX
+    if(er < ERR_MIN) er = ERR_MIN; /// * Make sure error is never below #ERR_MIN
+    prop = er / KP; /// * Calculate #proportional component of compensator
+	intacum += (int24_t) (er); /// * Calculate #integral component of compensator
+    inte = (int16_t) (intacum /  ((int24_t) KI * COUNTER));
+    pi = prop + inte; /// * Sum them up and store in @p pi*/
+    if ((uint16_t)((int16_t)dc + pi) >= DC_MAX){ /// * Make sure duty cycle is never above #DC_MAX
+        dc = DC_MAX;
+    }else if ((uint16_t)((int16_t)dc + pi) <= DC_MIN){ /// * Make sure duty cycle is never below #DC_MIN
+        dc = DC_MIN;
+    }else{
+        dc = (uint16_t)((int16_t)dc + pi); /// * Store the new value of the duty cycle with operation @code dc = dc + pi @endcode
+    }   
+}
+
+/**@brief This function sets the desired duty cycle
+*/
+void set_DC()
 {
-    while(RCIF){                //clear the reception register of UART
-        esc = RC1REG;
-        esc = 0;
-    }
-    PIR1bits.TMR1IF = 0;        //clear timer1 flag
-    RCIE = 1;                   //enable reception interrupts
-    TXIE = 0;                   //disable transmision interrupts
-    PEIE = 1;                   //enable peripherals interrupts
-    GIE = 1;                    //enable global interrupts   
+/// This function can set the duty cycle from 0x0 to 0x1FF
+    PSMC1DCL = dc & 0x00FF; /// * Lower 8 bits of #dc are stored in @p PSMC1DCL
+    PSMC1DCH = (dc >> 8) & 0x01; /// * Higher 1 bit of #dc are stored in @p PSMC1DCH
+    PSMC1CONbits.PSMC1LD = 1; /// * Set the load register. This will load all the setting as once*/
 }
 
-//**Function to send one byte of date to UART**//
+/**@brief This function takes care of printing the test data using the UART
+*/
+void log_control()
+{
+/**The code in this function is only executed if the #log_on variable is set*/
+/**This function takes care of sending the logging data in pieces to avoid disturbing the control loop. 
+This problem can be avoided with the use of interruptions for the control loop; however this was not implemented
+and could be considered as some future improvement IT IS IMPLEMENTED NOW*/  
+vbusp = (uint16_t) ( ( ( vbusp * 5000.0 ) / 4096 ) + 0.5 );
+vbatp = (uint16_t) ( ( ( vbatp * 5000.0 ) / 4096 ) + 0.5 );
+ibatp = (uint16_t) ( ( ( ibatp * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
+if ( ibatp > 0 ) capap += (uint16_t) ( ibatp / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
+    
+    if (log_on)
+    {
+                LINEBREAK;
+                display_value_u(minute);
+                UART_send_char(':'); /// * Send a colons character
+                if (second < 10) UART_send_char('0'); /// * If #second is smaller than 10 send a '0'
+                display_value_u((uint16_t) second);
+                UART_send_char(','); /// * Send a comma character
+                UART_send_string((char *) "vbus:"); /// * Send a 'C'
+                display_value_u(vbusp);
+                UART_send_char(','); /// * Send a comma character
+                UART_send_string((char *) "vbat:"); /// * Send an 'I'
+                display_value_u(vbatp);
+                UART_send_char(','); /// * Send a comma character
+                UART_send_string((char *) "cbat:"); /// * Send a 'Q'
+                //display_value_u((uint16_t) (dc * 1.933125));
+                display_value_u(capap);
+                UART_send_char('<'); /// * Send a '<'
+    }
+    if (!log_on) RESET_TIME(); /// If #log_on is cleared, call #RESET_TIME()
+}
+
+
+/**@brief This function read the ADC and store the data in the coresponding variable
+*/
+uint16_t read_ADC(uint16_t channel)
+{
+    uint16_t ad_res = 0;
+    __delay_us(10);
+    ADCON0bits.CHS = channel;
+    __delay_us(10);
+    GO_nDONE = 1;
+    while(GO_nDONE);
+    ad_res = (uint16_t)((ADRESL & 0xFF)|((ADRESH << 8) & 0xF00));
+    return ad_res;
+}
+
+/**@brief This function control the timing
+*/
+void timing()
+{
+    if(!count) /// If #count is other than zero, then
+    {
+        SECF = 1;
+        count = COUNTER + 1; /// * Make #count equal to #COUNTER
+        if(second < 59) second++; /// * If #second is smaller than 59 then increase it
+        else{second = 0; minute++;} /// * Else, make #second zero and increase #minute
+    }else /// Else,
+    {
+        count--; /// * Decrease it
+    }
+}
+
+/**@brief This function calculate the averages
+*/
+void calculate_avg()
+{
+    switch(count)
+    {
+        case COUNTER + 1: /// If #count = #COUNTER
+            vbusa = 0;
+            vbata = 0;
+            ibata = 0;
+            break;
+        case 0: /// If #count = 0
+            vbusp = ((vbusa >> 10) + ((vbusa >> 9) & 0x01)); /// * This is equivalent to vbusa / 1024 = vbusa / 2^10      
+            vbatp = ((vbata >> 10) + ((vbata >> 9) & 0x01)); /// * This is equivalent to vbata / 1024 = vbata / 2^10          
+            ibatp = ((ibata >> 10) + ((ibata >> 9) & 0x01)); /// * This is equivalent to ibata / 1024 = ibata / 2^10   
+            break;
+        default: /// If #count is not any of the previous cases then
+            vbusa += (uint24_t) vbus; /// * Accumulate #vbus in #vbusa
+            vbata += (uint24_t) vbat; /// * Accumulate #vbat in #vbata
+            ibata += (uint24_t) ibat; /// * Accumulate #ibat in #ibata
+    }   
+}
+
+void interrupt_enable()
+{
+    char clear_buffer = 0; /// * Define the variable @p clear_buffer, used to empty the UART buffer
+    while(RCIF){
+        clear_buffer = RC1REG; /// * Clear the reception buffer and store it in @p clear_buffer
+    }
+    RCIE = 1; /// * Enable UART reception interrupts
+    TXIE = 0; /// * Disable UART transmission interrupts
+    TMR1IE = 1;   //enable T1 interrupt
+    PEIE = 1;       //enable peripherals interrupts
+    GIE = 1;        //enable global interrupts
+    count = COUNTER + 1; /// The timing counter #count will be initialized to zero, to start a full control loop cycle
+    TMR1IF = 0; //Clear timer1 interrupt flag
+    TMR1ON = 1;    //turn on timer 
+}
+
+
+/**@brief This function send one byte of data to UART
+* @param bt character to be send
+*/
 void UART_send_char(char bt)  
 {
     while(0 == TXIF)
     {
-    }// hold the program till TX buffer is free
-    TX1REG = bt; //Load the transmitter buffer with the received value
+    }/// * Hold the program until the transmission buffer is free
+    TX1REG = bt; /// * Load the transmission buffer with @p bt
 }
-//_____________End of function________________//
-
-//**Function to get one byte of date from UART**//
-char UART_get_char()   
+/**@brief This function receive one byte of data from UART
+* @return RC1REG reception register
+*/
+char UART_get_char()
 {
-    if(OERR) // check for Error 
+    if(OERR) /// If there is error
     {
-        CREN = 0; //If error -> Reset 
-        CREN = 1; //If error -> Reset 
-    }
-    
-    while(!RCIF);  // hold the program till RX buffer is free
-    
-    return RC1REG; //receive the value and send it to main function
+        CREN = 0; /// * Clear the error
+        CREN = 1; /// * Restart
+    }    
+    while(!RCIF);  /// Hold the program until the reception buffer is free   
+    return RC1REG; /// Receive the value and return it
 }
-//_____________End of function________________//
-
-//**Function to convert string to byte**//
+/**@brief This function send a string using UART
+* @param st_pt pointer to string to be send
+*/
 void UART_send_string(char* st_pt)
 {
-    while(*st_pt) //if there is a char
-        UART_send_char(*st_pt++); //process it as a byte data
+    while(*st_pt) /// While there is a byte to send
+        UART_send_char(*st_pt++); /// * Send it using #UART_send_char() and then increase the pointer possition
 }
-
-void display_value(unsigned int value)
+///**@brief This function convert a number to string and then send it using UART
+//* @param value integer to be send
+//*/
+void display_value_u(uint16_t value)
 {   
-    char buffer[8]; 
-  
-    utoa(buffer,value,10);  
-  
-    UART_send_string(buffer);
+    char buffer[6]; /// * Define @p buffer to used it for store character storage
+    utoa(buffer,value,10);  /// * Convert @p value into a string and store it in @p buffer
+    UART_send_string(&buffer[0]); /// * Send @p buffer using #UART_send_string()
 }

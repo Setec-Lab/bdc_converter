@@ -44,94 +44,131 @@
     #include <string.h>
     #include <stdbool.h> // Include bool type
 
-unsigned int 						ad_res;
-unsigned int						v;  //ADDED
-unsigned int 						i;  //ADDED
-unsigned int 						t;  //ADDED
-unsigned int                        b;  //battery
-unsigned int 						count;             //ADDED
-uint24_t              				iprom;
-uint24_t                			vprom;
-uint24_t            				tprom;
-uint24_t                            bprom;
-unsigned int 						vref;
-unsigned int 						iref;
-char 								cmode;
-unsigned char 						cc_cv;
-unsigned int 						second;
-unsigned char 						esc;
-int 								pp;
-int 								pi;
-float 								kp;				//Proportional constant, seems too big data type
-float 								ki;				//Integral constant, seems too big data type
-uint16_t                            dc;             //Duty, check data size
-unsigned char 						spb;			//Baud rate set
-unsigned int            			log_on; 
+#define 	_XTAL_FREQ 				32000000
+#define		BAUD_RATE               9600
+#define		ERR_MAX					500
+#define		ERR_MIN					-500
+#define 	DC_MIN                  103	    // DC = 0.2 MINIMUM
+#define 	DC_MAX                  461		// DC = 0.9 MAX
+#define     KP                      15  ///< Proportional constant divider 
+#define     KI                      35  ///< Integral constant divider 
+#define     VREF                    4800                  
+#define     sVREF                   (uint16_t) ( ( ( VREF * 4096.0 ) / 5000 ) + 0.5 )
+#define     CREF                    2000                  
+#define     sCREF                   (uint16_t) ( ( ( CREF * 4096.0 ) / (5000 * 2.5 * 5 ) ) + 0.5 )
+#define     VOC                     5400
+#define     sVOC                    (uint16_t) ( ( ( VOC* 4096.0 ) / 5000 ) + 0.5 )
 
-uint16_t                counting = 0;
-uint16_t                 PWM = 0;
+#define     COUNTER                 1024
 
-#define		ERR_MAX					4095
-#define		ERR_MIN					-4095
+#define		IS_BAT                  0b00000 //AN0 (RA0)
+#define		VS_BAT                  0b00001 //AN1 (RA1)  
+#define		VS_BUS                  0b00010 //AN2 (RA2)  
+
+bool                                SECF = 0;
+uint16_t                            count = COUNTER + 1; ///< Counter that should be cleared every second. Initialized as #COUNTER 
+int24_t                             intacum;   ///< Integral acumulator of PI compensator
+uint16_t                            dc = 0;  ///< Duty cycle     
+bool                                log_on = 0; ///< Variable to indicate if the log is activated 
+int16_t                             second = 0; ///< Seconds counter, resetted after 59 seconds.
+uint16_t                            minute = 0; ///< Minutes counter, only manually reset
+bool                                conv = 0; ///< Turn controller ON(1) or OFF(0). Initialized as 0
+uint16_t                            vbus = 0;
+uint16_t                            vbat = 0;
+uint16_t                            ibat = 0;
+uint24_t                            vbusa = 0;
+uint24_t                            vbata = 0;
+uint24_t                            ibata = 0;
+uint16_t                            vbusp = 0;
+uint16_t                            vbatp = 0;
+uint16_t                            ibatp = 0;
+uint16_t                            capap = 0;
+uint16_t                            cvref = 4800;
+uint16_t                            ocref = 2000;
+uint16_t                            vref = 0;    
+uint16_t                            ivref = 0; 
+uint16_t                            iref = 0;
+uint16_t                            voc = 0;
+        
+void initialize(void);
+void pid(uint16_t feedback, uint16_t setpoint);
+void set_DC(void);
+uint16_t read_ADC(uint16_t channel);
+void log_control(void);
+void display_value_u(uint16_t value);
+void control_loop(void);
+void calculate_avg(void);
+void interrupt_enable(void);
+void UART_send_char(char bt);
+char UART_get_char(void); 
+void UART_send_string(char* st_pt);
+void timing(void);
+
+
+ 
+
+#define     LINEBREAK               {UART_send_char(10); UART_send_char(13);}
+
 #define		SET_VOLTAGE(x)			{ vref = x; }
 #define		SET_CURRENT(x)			{ iref = x; }
 
-#define 	_XTAL_FREQ 				32000000
-#define		BAUD_RATE               9600
+#define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 
-#define		V_CHAN                  0b00001 //AN1 (RA1) 
-#define		I_CHAN                  0b00000 //AN0 (RA0)
-#define		B_CHAN                  0b00010 //AN2 (RA2)
-
-#define		CELL1_ON				PORTAbits.RA7 = 1
-#define		CELL2_ON				PORTAbits.RA6 = 1
-#define		CELL3_ON				PORTCbits.RC0 = 1
-#define		CELL4_ON				PORTCbits.RC1 = 1
-#define		CELL1_OFF				PORTAbits.RA7 = 0
-#define		CELL2_OFF				PORTAbits.RA6 = 0
-#define		CELL3_OFF				PORTCbits.RC0 = 0
-#define		CELL4_OFF				PORTCbits.RC1 = 0
 
 #define		AD_SET_CHAN(x)          { ADCON0bits.CHS = x; __delay_us(1); }
 #define		AD_CONVERT()            { GO_nDONE = 1; while(GO_nDONE);}
 #define     AD_RESULT()             { ad_res = 0; ad_res = (ADRESL & 0xFF)|((ADRESH << 8) & 0xF00);} 
-//CONTROL LOOP RELATED DEFINITION
-#define     CURRENT_MODE            4                               //Number of times the voltage should be equal to the CV voltage in order to change to CV mode.
 
-#define     LINEBREAK               UART_send_char(10)
 
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = 0; set_DC(); /*TRISAbits.TRISA4 = 1; PORTAbits.RA1 = 1;*//*TURN OFF RELAY*/ Cell_OFF(); LOG_OFF(); v = 0; i = 0; t = 0; vprom = 0; iprom = 0; tprom = 0;}
-#define  	START_CONVERTER()		{ dc = DC_MIN; /*TRISAbits.TRISA4 = 0; PORTAbits.RA1 = 0;*/ /*TURN ON RELAY*/ Cell_ON(); }
-
-#define 	LOG_ON()				{ log_on = 1; }
-#define 	LOG_OFF()				{ log_on = 0; }
-
-//PARAMETER OF CHARGE AND DISCHARGE
-#define     PARAM_CHAR()        	{ kp=0.1; ki=0.05; SET_CURRENT(i_char); /*PORTAbits.RA0 = 0;*/ cmode=1; pi = 0; pp = 0; EOCD_count = 4;}
-#define     PARAM_DISC()        	{ kp=0.1; ki=0.05; SET_CURRENT(i_disc); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0;  EOCD_count = 4;} //MAYBE THAT THING CHARGE CAN DISAPEAR
-#define     PARAM_DCRES()       	{ kp=0.1; ki=0.05; SET_CURRENT(capacity / 5); /*PORTAbits.RA0 = 1;*/ cmode=1; pi = 0; pp = 0; dc_res_count = 14;}
-
-#define 	DC_MIN         103	    // DC = 0.2 MINIMUM
-#define 	DC_MAX         461		// DC = 0.9 MAX
-
- 
-#define     COUNTER        1000
+#define		STOP_CONVERTER()		{ dc = 0; set_DC(); RA4 = 0; log_on = 0; UART_send_string((char *) "\n\r STOP: \n\r"); }
+#define  	START_CONVERTER()		{ dc = DC_MIN; set_DC(); RA4 = 1; log_on = 1; UART_send_string((char *) "\n\r START: \n\r"); }
 
 
-void Initialize_Hardware(void);
-void Init_Registers(void);
-void Shutdown_Peripherals(void);
-void pid(unsigned int feedback, unsigned int setpoint);
-void set_DC(void);
-void read_ADC(void);
-void log_control(void);
-void display_value(unsigned int value);
-void calculate_avg(void);
-void Init_UART(void);
-void Interrupt_enable(void);
-void UART_send_char(char bt);
-char UART_get_char(void); 
-void UART_send_string(char* st_pt);
+
+
+// unsigned int 						ad_res;
+// unsigned int						v;  //ADDED
+// unsigned int 						i;  //ADDED
+// unsigned int 						t;  //ADDED
+// unsigned int                        b;  //battery
+// unsigned int 						count;             //ADDED
+// uint24_t              				iprom;
+// uint24_t                			vprom;
+// uint24_t            				tprom;
+// uint24_t                            bprom;
+// unsigned int 						vref;
+// unsigned int 						iref;
+// char 								cmode;
+// unsigned char 						cc_cv;
+// unsigned int 						second;
+// unsigned char 						esc;
+// int 								pp;
+// int 								pi;
+// float 								kp;				//Proportional constant, seems too big data type
+// float 								ki;				//Integral constant, seems too big data type
+// uint16_t                            dc;             //Duty, check data size
+// unsigned char 						spb;			//Baud rate set
+// unsigned int            			log_on; 
+
+uint16_t                counting = 0;
+uint16_t                 PWM = 0;
+
+char const              comma_str[] = ",";
+char const              in_arr_str[] = "->";
+char const              end_arr_str[] = "<-";
+char const              in_wait_str[] = "------------W-";
+char const              end_wait_str[] = "-W------------";
+char const              hip_str[] = "-";
+char const              in_sta_str[] = "S-";
+char const              end_sta_str[] = "-S";
+char const              C_str[] = "C";
+char const              V_str[] = "V";
+char const              I_str[] = "I";
+char const              T_str[] = "T";
+
+
+
+
 
 #endif /* HARDWARE_H*/

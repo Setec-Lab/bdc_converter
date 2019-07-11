@@ -16,100 +16,77 @@
 uint8_t                 SEC = 0;
 uint8_t                 MIN = 0;
 
-void main(void){
-    Init_Registers();
-	Initialize_Hardware();
-    Init_UART();    
-    count = COUNTER; 
-    iprom = 0;
-    vprom = 0;
-    tprom = 0;
-    vref = 4800;
-    esc = 0;   
-    v = 0;
-    kp = 0.07;
-    ki = 0.03;
-    __delay_ms(10);
+/**@brief This is the main function of the program.
+*/
 
-    TRISBbits.TRISB0 = 0;               //Set RB0 as output. led
-    ANSELBbits.ANSB0 = 0;               //Digital
-    Interrupt_enable();
-    TRISC0 = 1;
-    TRISC2 = 1; 
-    while(1){                      
-        if (counting > 1000){
-            if (LATB0){
-            RB0 = 0;
-            }else RB0 = 1; 
-            counting = 0;
-            if(SEC < 59) SEC++;
-            else{SEC = 0; MIN++;}
-            UART_send_string("\n\r");
-            UART_send_string("LED ON/OFF");
-            UART_send_string("\n\r");
-            UART_send_string("D: ");
-            display_value(((unsigned int)dc*0.1953));    
-            UART_send_string("\n\r");
-            UART_send_string("V: ");
-            display_value((unsigned int)vprom);    
-            UART_send_string("\n\r");
-            UART_send_string("B: ");
-            display_value((unsigned int)bprom);    
-            UART_send_string("\n\r");
-            if ((bprom < 4150) && (vref > 4800)) vref -= 2;
-            if (bprom < 2500)
+void main(void)
+{
+    initialize(); /// * Call the #initialize() function
+    __delay_ms(10);
+    interrupt_enable();
+    voc = sVOC; 
+    ivref = sVREF;
+    vref = sVREF;
+    iref = sCREF;
+    while(1)
+    {   
+        if (SECF) /// * The following tasks are executed every second:
+        {     
+            SECF = 0;
+            log_control(); /// *  Then, the log is printed in the serial terminal by calling the #log_control() function
+            if ((vbatp < 4150) && (vref > ivref)) vref -= 2;
+            if (vbatp < 2500)
             {
-                TRISC0 = 1;                         //Deactivate PWM
-                TRISC2 = 1;
+                STOP_CONVERTER();
+                UART_send_string((char *)"LOW BAT VOLTAGE \n\r");
             }
-        }	  
+        }       
 	}
 }
 
-void interrupt ISR(void) 
+/**@brief This is the interruption service function. It will stop the process if an @b ESC or a @b "n" is pressed. 
+*/
+void __interrupt() ISR(void) 
 {
+    char recep = 0; /// Define and initialize @p recep variable to store the received character
+    
     if(TMR1IF)
     {
-        TMR1H = 0xE0;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
-        TMR1L = 0xC0;//TMR1 counts: 8000 x 0.125us = 1ms
-        PIR1bits.TMR1IF= 0; //Clear timer1 interrupt flag
-        calculate_avg();  
-        counting++; 
-        read_ADC();
-        pid(v, vref);
-        if ((b >= 4150) && (vref < 5400)) vref +=1;
+        TMR1H = 0xE1;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
+        TMR1L = 0x83;//TMR1 counts: 7805 x 0.125us x 4 = 3.9025ms
+        TMR1IF = 0; //Clear timer1 interrupt flag
+        vbus = read_ADC(VS_BUS); /// * Then, the ADC channels are read by calling the #read_ADC() function
+        vbat = read_ADC(VS_BAT); /// * Then, the ADC channels are read by calling the #read_ADC() function
+        ibat = read_ADC(IS_BAT); /// * Then, the ADC channels are read by calling the #read_ADC() function
+        ibat = (uint16_t) (abs ( 2048 - (int)ibat ) ); ///If the #state is #CHARGE or #POSTCHARGE change the sign of the result  
+        if (conv){
+            control_loop(); /// -# The #control_loop() function is called*/
+            if ((vbat >= 4150) && (vref < voc)) vref +=1; ///NEEDS CORRECTION
+        }
+        calculate_avg(); /// * Then, averages for the 250 values available each second are calculated by calling the #calculate_avg() function
+        timing(); /// * Timing control is executed by calling the #timing() function 
+        //if (TMR1IF) UART_send_string((char*)"T_ERROR1");
     }
-    if(RCIF)
+
+    if(RCIF)/// If the UART reception flag is set then:
     {
-        if(RC1STAbits.OERR) // check for Error 
+        if(RC1STAbits.OERR) /// * Check for errors and clear them
         {
-            RC1STAbits.CREN = 0; //If error -> Reset 
-            RC1STAbits.CREN = 1; //If error -> Reset 
+            RC1STAbits.CREN = 0;  
+            RC1STAbits.CREN = 1; 
         }
-        
-        while(RCIF) esc = RC1REG; //receive the value and put it to esc
-        if (esc == 0x1B)
+        while(RCIF) recep = RC1REG; /// * Empty the reception buffer and assign its contents to the variable @p recep
+        switch (recep)
         {
-            TRISC0 = 1;                         //Deactivate PWM
-            TRISC2 = 1;
-        }else if (esc == 0x72)//restart "r"
-        {
-            TRISC0 = 0;
-            TRISC2 = 0;      
+        case 0x63: /// * If @p recep received a @b "c", then:
+            STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
+            break;
+        case 0x73: /// * If @p recep received an @b "s", then:
+            START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
             vref = 4800;
-        }else if (esc == 0x61)//a
-        {
-            TRISC0 = 0;
-            TRISC2 = 1;
-        }else if  (esc == 0x7A)//z
-        {
-            //nothing
-        }else
-        {
-            esc = 0;
+            break;
+        default:
+            recep = 0;
         }
-        UART_send_string("\n\r REC: \n\r");
-        UART_send_char(esc);
-        UART_send_string("\n\r");
-    }   
+    }  
 }
