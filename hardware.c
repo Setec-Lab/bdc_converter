@@ -142,7 +142,7 @@ int16_t     er = 0; /// * Define @p er for calculating the error
 int16_t     pi = 0; /// * Define @p pi for storing the PI compensator value
 int16_t     prop = 0;
 int16_t     inte = 0;
-    er = (int16_t) (setpoint - feedback); /// * Calculate the error by substract the @p feedback from the @p setpoint and store it in @p er
+    er = (int16_t) (feedback - setpoint); /// * Calculate the error by substract the @p feedback from the @p setpoint and store it in @p er
     if(er > ERR_MAX) er = ERR_MAX; /// * Make sure error is never above #ERR_MAX
     if(er < ERR_MIN) er = ERR_MIN; /// * Make sure error is never below #ERR_MIN
     prop = er / KP; /// * Calculate #proportional component of compensator
@@ -176,10 +176,10 @@ void log_control()
 /**This function takes care of sending the logging data in pieces to avoid disturbing the control loop. 
 This problem can be avoided with the use of interruptions for the control loop; however this was not implemented
 and could be considered as some future improvement IT IS IMPLEMENTED NOW*/  
-vbusp = (uint16_t) ( ( ( vbusp * 5000.0 ) / 4096 ) + 0.5 );
-vbatp = (uint16_t) ( ( ( vbatp * 5000.0 ) / 4096 ) + 0.5 );
-ibatp = (uint16_t) ( ( ( ibatp * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
-//if ( ibatp > 0 ) capap += (uint16_t) ( ibatp / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
+vbusav = (uint16_t) ( ( ( vbusav * 5000.0 ) / 4096 ) + 0.5 );
+vbatav = (uint16_t) ( ( ( vbatav * 5000.0 ) / 4096 ) + 0.5 );
+ibatav = (uint16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
+//if ( ibatav > 0 ) capap += (uint16_t) ( ibatav / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
     
     if (log_on)
     {
@@ -189,14 +189,14 @@ ibatp = (uint16_t) ( ( ( ibatp * 2.5 * 5000 ) / 4096 ) + 0.5 );
                 if (second < 10) UART_send_char('0'); /// * If #second is smaller than 10 send a '0'
                 display_value_u((uint16_t) second);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbusp:"); /// * Send a 'C'
-                display_value_u(vbusp);
+                UART_send_string((char *) "vbusav:"); /// * Send a 'C'
+                display_value_u(vbusav);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbatp:"); /// * Send an 'I'
-                display_value_u(vbatp);
+                UART_send_string((char *) "vbatav:"); /// * Send an 'I'
+                display_value_u(vbatav);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "ibatp:"); /// * Send an 'I'
-                display_value_u(ibatp);
+                UART_send_string((char *) "ibatav:"); /// * Send an 'I'
+                display_value_u(ibatav);
                 UART_send_char(','); /// * Send a comma character
                 UART_send_string((char *) "vbusref:"); /// * Send a 'Q'
                 //display_value_u((uint16_t) (dc * 1.933125));
@@ -208,6 +208,33 @@ ibatp = (uint16_t) ( ( ( ibatp * 2.5 * 5000 ) / 4096 ) + 0.5 );
                 UART_send_string((char *) "dc:"); /// * Send a 'Q'
                 display_value_u((uint16_t) (dc * 1.933125));
                 UART_send_char('<'); /// * Send a '<'
+    }
+    if (!log_on) RESET_TIME(); /// If #log_on is cleared, call #RESET_TIME()
+}
+
+/**@brief This function takes care of printing the test data using the UART
+*/
+void log_control_hex()
+{
+/**The code in this function is only executed if the #log_on variable is set*/
+/**This function takes care of sending the logging data in pieces to avoid disturbing the control loop. 
+This problem can be avoided with the use of interruptions for the control loop; however this was not implemented
+and could be considered as some future improvement IT IS IMPLEMENTED NOW*/  
+vbusav = (uint16_t) ( ( ( vbusav * 5000.0 ) / 4096 ) + 0.5 );
+vbatav = (uint16_t) ( ( ( vbatav * 5000.0 ) / 4096 ) + 0.5 );
+ibatav = (int16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
+//if ( ibatav > 0 ) capap += (uint16_t) ( ibatav / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
+    
+    if (log_on)
+    {
+                HEADER;
+                UART_send_16(minute);
+                UART_send_16((uint16_t)second);
+                UART_send_16(vbusav);
+                UART_send_16(vbatav);
+                UART_send_16(ibatav);
+                //UART_send_16(0xAABB);
+                FOOTER;
     }
     if (!log_on) RESET_TIME(); /// If #log_on is cleared, call #RESET_TIME()
 }
@@ -250,19 +277,20 @@ void calculate_avg()
     switch(count)
     {
         case COUNTER + 1: /// If #count = #COUNTER
-            vbusa = 0;
-            vbata = 0;
-            ibata = 0;
+            vbusac = 0;
+            vbatac = 0;
+            ibatac = 0;
             break;
         case 0: /// If #count = 0
-            vbusp = ((vbusa >> 10) + ((vbusa >> 9) & 0x01)); /// * This is equivalent to vbusa / 1024 = vbusa / 2^10      
-            vbatp = ((vbata >> 10) + ((vbata >> 9) & 0x01)); /// * This is equivalent to vbata / 1024 = vbata / 2^10          
-            ibatp = ((ibata >> 10) + ((ibata >> 9) & 0x01)); /// * This is equivalent to ibata / 1024 = ibata / 2^10   
+            vbusav = ((vbusac >> 10) + ((vbusac >> 9) & 0x01)); /// * This is equivalent to vbusac / 1024 = vbusac / 2^10      
+            vbatav = ((vbatac >> 10) + ((vbatac >> 9) & 0x01)); /// * This is equivalent to vbatac / 1024 = vbatac / 2^10          
+            ibatav = ((ibatac >> 10) + ((ibatac >> 9) & 0x01)); /// * This is equivalent to ibatac / 1024 = ibatac / 2^10   
+            //ibatav = (int16_t)(ibatac / 1024.0); /// * This is equivalent to ibatac / 1024 = ibatac / 2^10   
             break;
         default: /// If #count is not any of the previous cases then
-            vbusa += (uint24_t) vbus; /// * Accumulate #vbus in #vbusa
-            vbata += (uint24_t) vbat; /// * Accumulate #vbat in #vbata
-            ibata += (uint24_t) ibat; /// * Accumulate #ibat in #ibata
+            vbusac += (uint24_t) vbus; /// * Accumulate #vbus in #vbusac
+            vbatac += (uint24_t) vbat; /// * Accumulate #vbat in #vbatac
+            ibatac += (uint24_t) ibat; /// * Accumulate #ibat in #ibatac
     }   
 }
 
@@ -322,4 +350,19 @@ void display_value_u(uint16_t value)
     char buffer[6]; /// * Define @p buffer to used it for store character storage
     utoa(buffer,value,10);  /// * Convert @p value into a string and store it in @p buffer
     UART_send_string(&buffer[0]); /// * Send @p buffer using #UART_send_string()
+}
+
+/**@brief This function send a 16-bit number to UART
+* @param number 16-bit number to be send
+*/
+void UART_send_16(uint16_t number)  
+{
+    while(0 == TXIF)
+    {
+    }/// * Hold the program until the transmission buffer is free
+    TX1REG = (number >> 8) & 0xFF; /// * Load the transmission buffer with @p bt
+    while(0 == TXIF)
+    {
+    }/// * Hold the program until the transmission buffer is free
+    TX1REG = number & 0x00FF; /// * Load the transmission buffer with @p bt
 }

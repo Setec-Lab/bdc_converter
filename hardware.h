@@ -73,18 +73,18 @@ uint16_t                            count = COUNTER + 1; ///< Counter that shoul
 int24_t                             intacum = 0;   ///< Integral acumulator of PI compensator
 uint16_t                            dc = 0;  ///< Duty cycle     
 bool                                log_on = 0; ///< Variable to indicate if the log is activated 
-int16_t                             second = 0; ///< Seconds counter, resetted after 59 seconds.
+int16_t                             second = -1; ///< Seconds counter, resetted after 59 seconds.
 uint16_t                            minute = 0; ///< Minutes counter, only manually reset
 bool                                conv = 0; ///< Turn controller ON(1) or OFF(0). Initialized as 0
 uint16_t                            vbus = 0;
 uint16_t                            vbat = 0;
-uint16_t                            ibat = 0;
-uint24_t                            vbusa = 0;
-uint24_t                            vbata = 0;
-uint24_t                            ibata = 0;
-uint16_t                            vbusp = 0;
-uint16_t                            vbatp = 0;
-uint16_t                            ibatp = 0;
+int16_t                             ibat = 0;
+uint24_t                            vbusac = 0;
+uint24_t                            vbatac = 0;
+int24_t                            ibatac = 0;
+uint16_t                            vbusav = 0;
+uint16_t                            vbatav = 0;
+int16_t                             ibatav = 0;
 uint16_t                            capap = 0;
 uint16_t                            cvref = 4800;
 uint16_t                            ocref = 2000;
@@ -100,6 +100,7 @@ void pid(uint16_t feedback, uint16_t setpoint);
 void set_DC(void);
 uint16_t read_ADC(uint16_t channel);
 void log_control(void);
+void log_control_hex(void);
 void display_value_u(uint16_t value);
 void control_loop(void);
 void calculate_avg(void);
@@ -107,11 +108,19 @@ void interrupt_enable(void);
 void UART_send_char(char bt);
 char UART_get_char(void); 
 void UART_send_string(char* st_pt);
+void UART_send_16(uint16_t number); 
 void timing(void);
 
-#define     LINEBREAK               {UART_send_char(10); UART_send_char(13);}
+#define     LINEBREAK               {UART_send_char(0xA); UART_send_char(0xD);}
+#define     HEADER                  {UART_send_char(0x01); UART_send_char(0x02);}
+#define     FOOTER                  {UART_send_char(0x02); UART_send_char(0x01);}
+#define  	INCREASE		        {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x01);}
+#define  	DECREASE		        {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x02);}
+#define  	MANTAIN		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x03);}
+#define  	RESTART		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x04);}
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 0; log_on = 1; intacum = 0; conv = 0; UART_send_string((char *) "\n\r STOP: \n\r"); }
-#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 1; log_on = 1; intacum = 0; conv = 1; UART_send_string((char *) "\n\r START: \n\r"); }
+#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
+#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
+
 #endif /* HARDWARE_H*/

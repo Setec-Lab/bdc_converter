@@ -32,6 +32,7 @@ void main(void)
     vbatmin = sVBATMIN;
     vbatmax = sVBATMAX;
     iref = sCREF;
+    log_on = 1;
     while(1)
     {   
         if (SECF) /// * The following tasks are executed every second:
@@ -39,13 +40,12 @@ void main(void)
             if (RB0) RB0 = 0;
             else RB0 = 1;
             SECF = 0;
-            log_control(); /// *  Then, the log is printed in the serial terminal by calling the #log_control() function
-            if ((vbatp < vbatmax) && (vbusr > ivbusr)) vbusr -= 2;
-            if (vbatp < vbatmin)
+            log_control_hex();
+            //if ((vbatav < vbatmax) && (vbusr > ivbusr)) vbusr -= 2;
+            if (vbatav < vbatmin)
             {
                 STOP_CONVERTER();
                 TRISC0 = 1;
-                UART_send_string((char *)"LOW BAT VOLTAGE \n\r");
             }
         }       
 	}
@@ -59,17 +59,17 @@ void __interrupt() ISR(void)
     
     if(TMR1IF)
     {
-        TMR1H = 0xE1;//TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
-        TMR1L = 0x83;//TMR1 counts: 7805 x 0.125us x 4 = 3.9025ms
+        TMR1H = 0xE1; //TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
+        TMR1L = 0x83; //TMR1 counts: 7805 x 0.125us = 975.625us
         TMR1IF = 0; //Clear timer1 interrupt flag
         vbus = read_ADC(VS_BUS); /// * Then, the ADC channels are read by calling the #read_ADC() function
         vbat = read_ADC(VS_BAT); /// * Then, the ADC channels are read by calling the #read_ADC() function
-        ibat = read_ADC(IS_BAT); /// * Then, the ADC channels are read by calling the #read_ADC() function
+        ibat = (int16_t)(read_ADC(IS_BAT)); /// * Then, the ADC channels are read by calling the #read_ADC() function
         //HERE 2154 is a hack to get 0 current
-        ibat = (uint16_t) (abs ( 2252 - (int)ibat ) ); ///If the #state is #CHARGE or #POSTCHARGE change the sign of the result  
+        ibat = 2252 - ibat; ///If the #state is #CHARGE or #POSTCHARGE change the sign of the result  
         if (conv){
             control_loop(); /// -# The #control_loop() function is called*/
-            if ((vbat >= vbatmax) && (vbusr < voc)) vbusr +=1; ///NEEDS CORRECTION
+            //if ((vbat >= vbatmax) && (vbusr < voc)) vbusr +=1; ///NEEDS CORRECTION
         }
         calculate_avg(); /// * Then, averages for the 250 values available each second are calculated by calling the #calculate_avg() function
         timing(); /// * Timing control is executed by calling the #timing() function 
@@ -89,6 +89,7 @@ void __interrupt() ISR(void)
         case 0x63: /// * If @p recep received a @b "c", then:
             STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
             TRISC0 = 1;                         /// * Set RC0 as input
+            vbusr = ivbusr;
             break;
         case 0x73: /// * If @p recep received an @b "s", then:
             START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
