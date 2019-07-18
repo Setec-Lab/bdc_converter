@@ -13,11 +13,9 @@
 
 #include "hardware.h"
 
-uint8_t                 SEC = 0;
-uint8_t                 MIN = 0;
-
 /**@brief This is the main function of the program.
 */
+
 
 void main(void)
 {
@@ -35,6 +33,11 @@ void main(void)
     log_on = 1;
     while(1)
     {   
+        if (EMSF)
+        {
+            INCREASE;
+        }
+        
         if (SECF) /// * The following tasks are executed every second:
         {     
             if (RB0) RB0 = 0;
@@ -73,6 +76,7 @@ void __interrupt() ISR(void)
         }
         calculate_avg(); /// * Then, averages for the 250 values available each second are calculated by calling the #calculate_avg() function
         timing(); /// * Timing control is executed by calling the #timing() function 
+        timing_8m();
         //if (TMR1IF) UART_send_string((char*)"T_ERROR1");
     }
 
@@ -88,11 +92,13 @@ void __interrupt() ISR(void)
         {
         case 0x63: /// * If @p recep received a @b "c", then:
             STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
+            RESET_TIME() 
             TRISC0 = 1;                         /// * Set RC0 as input
             vbusr = ivbusr;
             break;
         case 0x73: /// * If @p recep received an @b "s", then:
             START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
+            RESET_TIME() 
             TRISC0 = 0;                         /// * Set RC0 as output
             vbusr = ivbusr;
             break;

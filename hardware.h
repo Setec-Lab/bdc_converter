@@ -68,6 +68,9 @@
 #define		VS_BAT                  0b00001 //AN1 (RA1)  
 #define		VS_BUS                  0b00010 //AN2 (RA2)  
 
+bool EMSF = 0;
+uint16_t count8 = 8; 
+///END OF TEST
 bool                                SECF = 0;
 uint16_t                            count = COUNTER + 1; ///< Counter that should be cleared every second. Initialized as #COUNTER 
 int24_t                             intacum = 0;   ///< Integral acumulator of PI compensator
@@ -81,7 +84,7 @@ uint16_t                            vbat = 0;
 int16_t                             ibat = 0;
 uint24_t                            vbusac = 0;
 uint24_t                            vbatac = 0;
-int24_t                            ibatac = 0;
+int24_t                             ibatac = 0;
 uint16_t                            vbusav = 0;
 uint16_t                            vbatav = 0;
 int16_t                             ibatav = 0;
@@ -102,14 +105,17 @@ uint16_t read_ADC(uint16_t channel);
 void log_control(void);
 void log_control_hex(void);
 void display_value_u(uint16_t value);
+void display_value_s(int16_t value);
 void control_loop(void);
 void calculate_avg(void);
 void interrupt_enable(void);
 void UART_send_char(char bt);
 char UART_get_char(void); 
 void UART_send_string(char* st_pt);
-void UART_send_16(uint16_t number); 
+void UART_send_u16(uint16_t number); 
+void UART_send_i16(int16_t number); 
 void timing(void);
+void timing_8m(void);
 
 #define     LINEBREAK               {UART_send_char(0xA); UART_send_char(0xD);}
 #define     HEADER                  {UART_send_char(0x01); UART_send_char(0x02);}

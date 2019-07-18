@@ -196,7 +196,7 @@ ibatav = (uint16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 );
                 display_value_u(vbatav);
                 UART_send_char(','); /// * Send a comma character
                 UART_send_string((char *) "ibatav:"); /// * Send an 'I'
-                display_value_u(ibatav);
+                display_value_s(ibatav);
                 UART_send_char(','); /// * Send a comma character
                 UART_send_string((char *) "vbusref:"); /// * Send a 'Q'
                 //display_value_u((uint16_t) (dc * 1.933125));
@@ -228,12 +228,11 @@ ibatav = (int16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 );
     if (log_on)
     {
                 HEADER;
-                UART_send_16(minute);
-                UART_send_16((uint16_t)second);
-                UART_send_16(vbusav);
-                UART_send_16(vbatav);
-                UART_send_16(ibatav);
-                //UART_send_16(0xAABB);
+                UART_send_u16(minute);
+                UART_send_u16((uint16_t)second);
+                UART_send_u16(vbusav);
+                UART_send_u16(vbatav);
+                UART_send_i16(ibatav);
                 FOOTER;
     }
     if (!log_on) RESET_TIME(); /// If #log_on is cleared, call #RESET_TIME()
@@ -267,6 +266,20 @@ void timing()
     }else /// Else,
     {
         count--; /// * Decrease it
+    }
+}
+
+/**@brief This function control the timing
+*/
+void timing_8m()
+{
+    if(!count8) /// If #count is other than zero, then
+    {
+        EMSF = 1;
+        count8 = 8; /// * Make #count equal to #COUNTER
+    }else /// Else,
+    {
+        count8--; /// * Decrease it
     }
 }
 
@@ -351,11 +364,32 @@ void display_value_u(uint16_t value)
     utoa(buffer,value,10);  /// * Convert @p value into a string and store it in @p buffer
     UART_send_string(&buffer[0]); /// * Send @p buffer using #UART_send_string()
 }
+///**@brief This function convert a number to string and then send it using UART
+//* @param value integer to be send
+//*/
+void display_value_s(int16_t value)
+{   
+    char buffer[7]; /// * Define @p buffer to used it for store character storage
+    itoa(buffer,value,10);  /// * Convert @p value into a string and store it in @p buffer
+    UART_send_string(&buffer[0]); /// * Send @p buffer using #UART_send_string()
+}
 
 /**@brief This function send a 16-bit number to UART
 * @param number 16-bit number to be send
 */
-void UART_send_16(uint16_t number)  
+void UART_send_u16(uint16_t number)  
+{
+    while(0 == TXIF)
+    {
+    }/// * Hold the program until the transmission buffer is free
+    TX1REG = (number >> 8) & 0xFF; /// * Load the transmission buffer with @p bt
+    while(0 == TXIF)
+    {
+    }/// * Hold the program until the transmission buffer is free
+    TX1REG = number & 0x00FF; /// * Load the transmission buffer with @p bt
+}
+
+void UART_send_i16(int16_t number)  
 {
     while(0 == TXIF)
     {
