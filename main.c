@@ -32,24 +32,21 @@ void main(void)
     iref = sCREF;
     log_on = 1;
     while(1)
-    {   
-        if (EMSF)
-        {
-            INCREASE;
-        }
-        
+    {           
         if (SECF) /// * The following tasks are executed every second:
         {     
-            if (RB0) RB0 = 0;
-            else RB0 = 1;
             SECF = 0;
+            //if (RB0) RB0 = 0;
+            //else RB0 = 1;
             log_control_hex();
             //if ((vbatav < vbatmax) && (vbusr > ivbusr)) vbusr -= 2;
+            #if CONVERTER    
             if (vbatav < vbatmin)
             {
                 STOP_CONVERTER();
                 TRISC0 = 1;
             }
+            #endif
         }       
 	}
 }
@@ -62,6 +59,7 @@ void __interrupt() ISR(void)
     
     if(TMR1IF)
     {
+        #if CONVERTER
         TMR1H = 0xE1; //TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
         TMR1L = 0x83; //TMR1 counts: 7805 x 0.125us = 975.625us
         TMR1IF = 0; //Clear timer1 interrupt flag
@@ -74,10 +72,27 @@ void __interrupt() ISR(void)
             control_loop(); /// -# The #control_loop() function is called*/
             //if ((vbat >= vbatmax) && (vbusr < voc)) vbusr +=1; ///NEEDS CORRECTION
         }
+        #endif
+        #if CONTROLLER
+        TMR1H = 0xE1; //TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
+        TMR1L = 0x83; //TMR1 counts: 7805 x 0.125us x 8 = 7805us
+        TMR1IF = 0; //Clear timer1 interrupt flag
+        vpv = read_ADC(V_BUS);
+        ipv = (int16_t)(read_ADC(I_PV));
+        ipv = ipv - 2048;
+        if (mppt){
+            PAO(vpv, ipv, power, dir);
+            DIRECTION(dir);
+        }
+        ilo = (int16_t)(read_ADC(I_LOAD));
+        ilo = ilo - 2048;
+        v50 = read_ADC(V_PDU_50V);
+        i50 = read_ADC(I_PDU_50V);
+        v33 = read_ADC(V_PDU_33V);
+        i33 = read_ADC(I_PDU_33V);
+        #endif
         calculate_avg(); /// * Then, averages for the 250 values available each second are calculated by calling the #calculate_avg() function
-        timing(); /// * Timing control is executed by calling the #timing() function 
-        timing_8m();
-        //if (TMR1IF) UART_send_string((char*)"T_ERROR1");
+        timing(); /// * Timing control is executed by calling the #timing() function         
     }
 
     if(RCIF)/// If the UART reception flag is set then:

@@ -44,13 +44,15 @@
     #include <string.h>
     #include <stdbool.h> // Include bool type
 
+#define     CONTROLLER              1
+#define     CONVERTER               0
 #define 	_XTAL_FREQ 				32000000
 #define		ERR_MAX					1000
 #define		ERR_MIN					-1000
-#define 	DC_MIN                  103	    // DC = 0.2 MINIMUM
-#define 	DC_MAX                  461		// DC = 0.9 MAX
-#define     KP                      15  ///< Proportional constant divider 
-#define     KI                      35  ///< Integral constant divider 
+#define 	DC_MIN                  103 // DC = 0.2 MINIMUM
+#define 	DC_MAX                  461	// DC = 0.9 MAX
+#define     KP                      15 ///< Proportional constant divider 
+#define     KI                      35 ///< Integral constant divider 
 #define     VREF                    4800                  
 #define     sVREF                   (uint16_t) ( ( ( VREF * 4096.0 ) / 5000 ) + 0.5 )
 #define     CREF                    2000                  
@@ -63,10 +65,51 @@
 #define     sVBATMAX                (uint16_t) ( ( ( VBATMAX * 4096.0 ) / 5000 ) + 0.5 )
 
 #define     COUNTER                 1024
+#if CONTROLLER
+#define     I_PDU_50V               0b01011 //AN11 (RB4)
+#define     V_PDU_50V               0b01001 //AN9 (RB3)
+#define     I_PDU_33V               0b01010 //AN10 (RB1)
+#define     V_PDU_33V               0b01100 //AN12 (RB0)
+#define		I_LOAD                  0b00010 //AN2 (RA2) 
+#define		V_BUS                   0b00001 //AN1 (RA1)  
+#define		I_PV                    0b00000 //AN0 (RA0)  
+#endif
 
-#define		IS_BAT                  0b00000 //AN0 (RA0)
-#define		VS_BAT                  0b00001 //AN1 (RA1)  
-#define		VS_BUS                  0b00010 //AN2 (RA2)  
+#if CONVERTER
+#define		VS_BUS                  0b00010 //AN2 (RA2) 
+#define		VS_BAT                  0b00001 //AN1 (RA1) 
+#define		IS_BAT                  0b00000 //AN0 (RA0) 
+#endif
+
+#if CONTROLLER
+bool                                mppt = 0;
+uint32_t                            power = 0;
+char                                dir = 0; //0x01 increase 0x02 decrease 0x03 mantain
+// ADC values
+uint16_t                            vpv = 0;
+int16_t                             ipv = 0;
+uint16_t                            ilo = 0;
+uint16_t                            v50 = 0;
+uint16_t                            i50 = 0;
+uint16_t                            v33 = 0;
+uint16_t                            i33 = 0;
+// Acumulators
+uint24_t                            vpvac = 0;
+int24_t                             ipvac = 0;
+uint24_t                            iloac = 0;
+uint24_t                            v50ac = 0;
+uint24_t                            i50ac = 0;
+uint24_t                            v33ac = 0;
+uint24_t                            i33ac = 0;
+// Averages
+uint16_t                            vpvav = 0;
+int16_t                             ipvav = 0;
+uint16_t                            iloav = 0;
+uint16_t                            v50av = 0;
+uint16_t                            i50av = 0;
+uint16_t                            v33av = 0;
+uint16_t                            i33av = 0;
+#endif
 
 bool EMSF = 0;
 uint16_t count8 = 8; 
@@ -99,8 +142,8 @@ uint16_t                            vbatmin = 0;
 uint16_t                            vbatmax = 0;
         
 void initialize(void);
-void pid(uint16_t feedback, uint16_t setpoint);
-void set_DC(void);
+void pid(uint16_t feedback, uint16_t setpoint, int24_t* acum, uint16_t* duty_cycle);
+void set_DC(uint16_t* duty_cycle);
 uint16_t read_ADC(uint16_t channel);
 void log_control(void);
 void log_control_hex(void);
@@ -116,17 +159,17 @@ void UART_send_u16(uint16_t number);
 void UART_send_i16(int16_t number); 
 void timing(void);
 void timing_8m(void);
+void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, char* previous_direction);
+
 
 #define     LINEBREAK               {UART_send_char(0xA); UART_send_char(0xD);}
 #define     HEADER                  {UART_send_char(0x01); UART_send_char(0x02);}
 #define     FOOTER                  {UART_send_char(0x02); UART_send_char(0x01);}
-#define  	INCREASE		        {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x01);}
-#define  	DECREASE		        {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x02);}
-#define  	MANTAIN		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x03);}
+#define  	DIRECTION(x)		    {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(x);UART_send_char(0x03); UART_send_char(0x01);}
 #define  	RESTART		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x04);}
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
-#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
+#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
+#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
 
 #endif /* HARDWARE_H*/
