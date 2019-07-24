@@ -213,23 +213,23 @@ ibatav = (uint16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 );
                 if (second < 10) UART_send_char('0'); /// * If #second is smaller than 10 send a '0'
                 display_value_u((uint16_t) second);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbusav:"); /// * Send a 'C'
+                UART_send_string("vbusav:"); /// * Send a 'C'
                 display_value_u(vbusav);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbatav:"); /// * Send an 'I'
+                UART_send_string("vbatav:"); /// * Send an 'I'
                 display_value_u(vbatav);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "ibatav:"); /// * Send an 'I'
+                UART_send_string("ibatav:"); /// * Send an 'I'
                 display_value_s(ibatav);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbusref:"); /// * Send a 'Q'
+                UART_send_string("vbusref:"); /// * Send a 'Q'
                 //display_value_u((uint16_t) (dc * 1.933125));
                 display_value_u(vbusr);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "vbus:"); /// * Send a 'Q'
+                UART_send_string("vbus:"); /// * Send a 'Q'
                 display_value_u(vbus);
                 UART_send_char(','); /// * Send a comma character
-                UART_send_string((char *) "dc:"); /// * Send a 'Q'
+                UART_send_string("dc:"); /// * Send a 'Q'
                 display_value_u((uint16_t) (dc * 1.933125));
                 UART_send_char('<'); /// * Send a '<'
     }
@@ -264,8 +264,8 @@ ibatav = (int16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 );
 #endif
 #if CONTROLLER
 vpvav = (uint16_t) ( ( ( vpvav * 5000.0 ) / 4096 ) + 0.5 ); //If I install an 845omh with a 158 ohm will be 5935.91 
-ipvav = (int16_t) ( ( ( ipvav * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
-iloav = (int16_t) ( ( ( iloav * 2.5 * 5000 ) / 4096 ) + 0.5 );
+ipvav = (uint16_t) ( ( ( ipvav * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
+iloav = (uint16_t) ( ( ( iloav * 2.5 * 5000 ) / 4096 ) + 0.5 );
 v50av = (uint16_t) ( ( ( v50av * 5000.0 ) / 4096 ) + 0.5 );
 i50av = (uint16_t) ( ( ( i50av * 5000.0 ) / 4096 ) + 0.5 );
 v33av = (uint16_t) ( ( ( v33av * 5000.0 ) / 4096 ) + 0.5 );
@@ -277,8 +277,8 @@ i33av = (uint16_t) ( ( ( i33av * 5000.0 ) / 4096 ) + 0.5 );
                 UART_send_u16(minute);
                 UART_send_u16((uint16_t)second);
                 UART_send_u16(vpvav);
-                UART_send_i16(ipvav);
-                UART_send_i16(iloav);
+                UART_send_u16(ipvav);
+                UART_send_u16(iloav);
                 UART_send_u16(v50av);
                 UART_send_u16(i50av);
                 UART_send_u16(v33av);
@@ -435,7 +435,7 @@ char UART_get_char()
 /**@brief This function send a string using UART
 * @param st_pt pointer to string to be send
 */
-void UART_send_string(char* st_pt)
+void UART_send_string(const char* st_pt)
 {
     while(*st_pt) /// While there is a byte to send
         UART_send_char(*st_pt++); /// * Send it using #UART_send_char() and then increase the pointer possition
@@ -447,7 +447,7 @@ void display_value_u(uint16_t value)
 {   
     char buffer[6]; /// * Define @p buffer to used it for store character storage
     utoa(buffer,value,10);  /// * Convert @p value into a string and store it in @p buffer
-    UART_send_string(&buffer[0]); /// * Send @p buffer using #UART_send_string()
+    UART_send_string(buffer); /// * Send @p buffer using #UART_send_string()
 }
 ///**@brief This function convert a number to string and then send it using UART
 //* @param value integer to be send
@@ -456,7 +456,7 @@ void display_value_s(int16_t value)
 {   
     char buffer[7]; /// * Define @p buffer to used it for store character storage
     itoa(buffer,value,10);  /// * Convert @p value into a string and store it in @p buffer
-    UART_send_string(&buffer[0]); /// * Send @p buffer using #UART_send_string()
+    UART_send_string(buffer); /// * Send @p buffer using #UART_send_string()
 }
 
 /**@brief This function send a 16-bit number to UART
@@ -474,17 +474,17 @@ void UART_send_u16(uint16_t number)
     TX1REG = number & 0x00FF; /// * Load the transmission buffer with @p bt
 }
 
-void UART_send_i16(int16_t number)  
-{
-    while(0 == TXIF)
-    {
-    }/// * Hold the program until the transmission buffer is free
-    TX1REG = (number >> 8) & 0xFF; /// * Load the transmission buffer with @p bt
-    while(0 == TXIF)
-    {
-    }/// * Hold the program until the transmission buffer is free
-    TX1REG = number & 0x00FF; /// * Load the transmission buffer with @p bt
-}
+//void UART_send_i16(int16_t number)  
+//{
+//    while(0 == TXIF)
+//    {
+//    }/// * Hold the program until the transmission buffer is free
+//    TX1REG = (number >> 8) & 0xFF; /// * Load the transmission buffer with @p bt
+//    while(0 == TXIF)
+//    {
+//    }/// * Hold the program until the transmission buffer is free
+//    TX1REG = number & 0x00FF; /// * Load the transmission buffer with @p bt
+//}
 /**@brief This function calculate the averages
 */
 void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, char* previous_direction)

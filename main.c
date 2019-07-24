@@ -2,7 +2,7 @@
  * @file main.c
  * @author Juan J. Rojas
  * @date 10 Nov 2018
- * @brief main loop for the BDC prototype controller.
+ * @brief main loop for the BDC prototype controller or converter.
  * @par Institution:
  * LaSEINE / CeNT. Kyushu Institute of Technology.
  * @par Mail (after leaving Kyutech):
@@ -78,13 +78,13 @@ void __interrupt() ISR(void)
         TMR1L = 0x83; //TMR1 counts: 7805 x 0.125us x 8 = 7805us
         TMR1IF = 0; //Clear timer1 interrupt flag
         vpv = read_ADC(V_BUS);
-        ipv = (int16_t)(read_ADC(I_PV));
+        ipv = read_ADC(I_PV);
         ipv = ipv - 2048;
         if (mppt){
-            PAO(vpv, ipv, power, dir);
+            PAO(vpv, ipv, &power, &dir);
             DIRECTION(dir);
         }
-        ilo = (int16_t)(read_ADC(I_LOAD));
+        ilo = read_ADC(I_LOAD);
         ilo = ilo - 2048;
         v50 = read_ADC(V_PDU_50V);
         i50 = read_ADC(I_PDU_50V);

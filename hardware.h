@@ -87,7 +87,7 @@ uint32_t                            power = 0;
 char                                dir = 0; //0x01 increase 0x02 decrease 0x03 mantain
 // ADC values
 uint16_t                            vpv = 0;
-int16_t                             ipv = 0;
+uint16_t                            ipv = 0;
 uint16_t                            ilo = 0;
 uint16_t                            v50 = 0;
 uint16_t                            i50 = 0;
@@ -95,7 +95,7 @@ uint16_t                            v33 = 0;
 uint16_t                            i33 = 0;
 // Acumulators
 uint24_t                            vpvac = 0;
-int24_t                             ipvac = 0;
+uint24_t                            ipvac = 0;
 uint24_t                            iloac = 0;
 uint24_t                            v50ac = 0;
 uint24_t                            i50ac = 0;
@@ -103,7 +103,7 @@ uint24_t                            v33ac = 0;
 uint24_t                            i33ac = 0;
 // Averages
 uint16_t                            vpvav = 0;
-int16_t                             ipvav = 0;
+uint16_t                            ipvav = 0;
 uint16_t                            iloav = 0;
 uint16_t                            v50av = 0;
 uint16_t                            i50av = 0;
@@ -154,9 +154,9 @@ void calculate_avg(void);
 void interrupt_enable(void);
 void UART_send_char(char bt);
 char UART_get_char(void); 
-void UART_send_string(char* st_pt);
+void UART_send_string(const char* st_pt);
 void UART_send_u16(uint16_t number); 
-void UART_send_i16(int16_t number); 
+//void UART_send_i16(int16_t number); 
 void timing(void);
 void timing_8m(void);
 void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, char* previous_direction);
