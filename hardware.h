@@ -44,8 +44,8 @@
     #include <string.h>
     #include <stdbool.h> // Include bool type
 
-#define     CONTROLLER              1
-#define     CONVERTER               0
+#define     CONTROLLER              0
+#define     CONVERTER               1
 #define 	_XTAL_FREQ 				32000000
 #define		ERR_MAX					1000
 #define		ERR_MIN					-1000
@@ -119,7 +119,7 @@ uint16_t count8 = 8;
 bool                                SECF = 0;
 uint16_t                            count = COUNTER + 1; ///< Counter that should be cleared every second. Initialized as #COUNTER 
 int24_t                             intacum = 0;   ///< Integral acumulator of PI compensator
-uint16_t                            dc = 0;  ///< Duty cycle     
+uint16_t                            dc = DC_MAX;  ///< Duty cycle     
 bool                                log_on = 0; ///< Variable to indicate if the log is activated 
 int16_t                             second = -1; ///< Seconds counter, resetted after 59 seconds.
 uint16_t                            minute = 0; ///< Minutes counter, only manually reset
@@ -144,8 +144,10 @@ uint16_t                            vbatmin = 0;
 uint16_t                            vbatmax = 0;
         
 void initialize(void);
-void pid(uint16_t feedback, uint16_t setpoint, int24_t* acum, uint16_t* duty_cycle);
-void set_DC(uint16_t* duty_cycle);
+//void pid(uint16_t feedback, uint16_t setpoint, int24_t* acum, uint16_t* duty_cycle);
+//void set_DC(uint16_t* duty_cycle);
+void pid(uint16_t feedback, uint16_t setpoint);
+void set_DC(void);
 uint16_t read_ADC(uint16_t channel);
 void log_control(void);
 void log_control_hex(void);
@@ -171,7 +173,9 @@ void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, cha
 #define  	RESTART		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x04);}
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
-#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
+//#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
+//#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
+#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
+#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
 
 #endif /* HARDWARE_H*/

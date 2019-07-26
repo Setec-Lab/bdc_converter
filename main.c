@@ -34,17 +34,23 @@ void main(void)
         if (SECF) /// * The following tasks are executed every second:
         {     
             SECF = 0;
-            //if (RB0) RB0 = 0;
-            //else RB0 = 1;
-            log_control_hex();
+            //log_control_hex();
             //if ((vbatav < vbatmax) && (vbusr > ivbusr)) vbusr -= 2;
-            #if CONVERTER    
-            if (vbatav < vbatmin)
-            {
-                STOP_CONVERTER();
-                TRISC0 = 1;
-            }
-            #endif
+//            #if CONVERTER    
+//            if (vbatav < vbatmin)
+//            {
+//                STOP_CONVERTER();
+//                TRISC0 = 1;
+//            }
+//            #endif
+            display_value_u((uint16_t)second);
+            LINEBREAK;
+            display_value_u(vbus);
+            LINEBREAK;
+            display_value_u(vbusr);
+            LINEBREAK;
+            display_value_u(dc);
+            LINEBREAK;
         }       
 	}
 }
@@ -65,7 +71,7 @@ void __interrupt() ISR(void)
         vbat = read_ADC(VS_BAT); /// * Then, the ADC channels are read by calling the #read_ADC() function
         ibat = (int16_t)(read_ADC(IS_BAT)); /// * Then, the ADC channels are read by calling the #read_ADC() function
         //HERE 2154 is a hack to get 0 current
-        ibat = 2252 - ibat; ///If the #state is #CHARGE or #POSTCHARGE change the sign of the result  
+        ibat = 2048 - ibat; ///If the #state is #CHARGE or #POSTCHARGE change the sign of the result  
         if (conv){
             control_loop(); /// -# The #control_loop() function is called*/
             //if ((vbat >= vbatmax) && (vbusr < voc)) vbusr +=1; ///NEEDS CORRECTION
@@ -92,7 +98,7 @@ void __interrupt() ISR(void)
         calculate_avg(); /// * Then, averages for the 250 values available each second are calculated by calling the #calculate_avg() function
         timing(); /// * Timing control is executed by calling the #timing() function         
     }
-
+    
     if(RCIF)/// If the UART reception flag is set then:
     {
         if(RC1STAbits.OERR) /// * Check for errors and clear them
@@ -101,6 +107,7 @@ void __interrupt() ISR(void)
             RC1STAbits.CREN = 1; 
         }
         while(RCIF) recep = RC1REG; /// * Empty the reception buffer and assign its contents to the variable @p recep
+        #if CONTROLLER
         switch (recep)
         {
         case 0x63: /// * If @p recep received a @b "c", then:
@@ -112,11 +119,32 @@ void __interrupt() ISR(void)
         case 0x73: /// * If @p recep received an @b "s", then:
             START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
             RESET_TIME() 
-            TRISC0 = 0;                         /// * Set RC0 as output
+            TRISC0 = 0; //MAYBE BPUT IT INSIDE START                        /// * Set RC0 as output
             vbusr = ivbusr;
             break;
         default:
             recep = 0;
         }
+        #endif
+        #if CONVERTER
+        switch (recep)
+        {
+        case 0x63: /// * If @p recep received a @b "c", then:
+            STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
+            RESET_TIME() 
+            //TRISC0 = 1;                         /// * Set RC0 as input
+            vbusr = ivbusr;
+            break;
+        case 0x73: /// * If @p recep received an @b "s", then:
+            START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
+            RESET_TIME() 
+            //TRISC0 = 0; //MAYBE BPUT IT INSIDE START                        /// * Set RC0 as output
+            vbusr = ivbusr;
+            break;
+        default:
+            recep = 0;
+        }
+        #endif
     }  
+   
 }
