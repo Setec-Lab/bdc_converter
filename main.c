@@ -21,8 +21,6 @@ void main(void)
 {
     initialize(); /// * Call the #initialize() function
     __delay_ms(10);
-    TRISBbits.TRISB0 = 0;               //Set RB0 as output. led
-    ANSELBbits.ANSB0 = 0;               //Digital
     interrupt_enable();
     voc = sVOC; 
     ivbusr = sVREF;
@@ -79,13 +77,13 @@ void __interrupt() ISR(void)
         TMR1IF = 0; //Clear timer1 interrupt flag
         vpv = read_ADC(V_BUS);
         ipv = read_ADC(I_PV);
-        ipv = ipv - 2048;
+        ipv = abs(ipv - 2048);
         if (mppt){
             PAO(vpv, ipv, &power, &dir);
             DIRECTION(dir);
         }
         ilo = read_ADC(I_LOAD);
-        ilo = ilo - 2048;
+        ilo = abs(ilo - 2048);
         v50 = read_ADC(V_PDU_50V);
         i50 = read_ADC(I_PDU_50V);
         v33 = read_ADC(V_PDU_33V);

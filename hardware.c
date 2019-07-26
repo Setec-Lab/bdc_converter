@@ -257,7 +257,7 @@ ibatav = (int16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 );
                 UART_send_u16((uint16_t)second);
                 UART_send_u16(vbusav);
                 UART_send_u16(vbatav);
-                UART_send_i16(ibatav);
+                UART_send_u16(ibatav);
                 FOOTER;
     }
     if (!log_on) RESET_TIME(); /// If #log_on is cleared, call #RESET_TIME()
@@ -270,10 +270,11 @@ v50av = (uint16_t) ( ( ( v50av * 5000.0 ) / 4096 ) + 0.5 );
 i50av = (uint16_t) ( ( ( i50av * 5000.0 ) / 4096 ) + 0.5 );
 v33av = (uint16_t) ( ( ( v33av * 5000.0 ) / 4096 ) + 0.5 );
 i33av = (uint16_t) ( ( ( i33av * 5000.0 ) / 4096 ) + 0.5 );
-//if ( ibatav > 0 ) capap += (uint16_t) ( ibatav / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
     if (log_on)
     {
+
                 HEADER;
+                //From here there are 20 bytes
                 UART_send_u16(minute);
                 UART_send_u16((uint16_t)second);
                 UART_send_u16(vpvav);
@@ -296,9 +297,8 @@ i33av = (uint16_t) ( ( ( i33av * 5000.0 ) / 4096 ) + 0.5 );
 uint16_t read_ADC(uint16_t channel)
 {
     uint16_t ad_res = 0;
-    __delay_us(10);
     ADCON0bits.CHS = channel;
-    __delay_us(10);
+    __delay_us(20);
     GO_nDONE = 1;
     while(GO_nDONE);
     ad_res = (uint16_t)((ADRESL & 0xFF)|((ADRESH << 8) & 0xF00));
@@ -372,13 +372,13 @@ void calculate_avg()
             i33ac = 0;
             break;
         case 0: /// If #count = 0
-            vpvav = ((vpvac >> 10) + ((vpvac >> 9) & 0x01));
-            ipvav = ((ipvac >> 10) + ((ipvac >> 9) & 0x01));
-            iloav = ((iloac >> 10) + ((iloac >> 9) & 0x01));
-            v50av = ((v50ac >> 10) + ((v50ac >> 9) & 0x01));
-            i50av = ((i50ac >> 10) + ((i50ac >> 9) & 0x01));
-            v33av = ((v33ac >> 10) + ((v33ac >> 9) & 0x01));
-            i33av = ((i33ac >> 10) + ((i33ac >> 9) & 0x01));
+            vpvav = ((vpvac >> 7) + ((vpvac >> 6) & 0x01));
+            ipvav = ((ipvac >> 7) + ((ipvac >> 6) & 0x01));
+            iloav = ((iloac >> 7) + ((iloac >> 6) & 0x01));
+            v50av = ((v50ac >> 7) + ((v50ac >> 6) & 0x01));
+            i50av = ((i50ac >> 7) + ((i50ac >> 6) & 0x01));
+            v33av = ((v33ac >> 7) + ((v33ac >> 6) & 0x01));
+            i33av = ((i33ac >> 7) + ((i33ac >> 6) & 0x01));
             break;
         default: /// If #count is not any of the previous cases then
             vpvac += (uint24_t) vpv;

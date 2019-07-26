@@ -64,8 +64,9 @@
 #define     VBATMAX                 4150
 #define     sVBATMAX                (uint16_t) ( ( ( VBATMAX * 4096.0 ) / 5000 ) + 0.5 )
 
-#define     COUNTER                 1024
+
 #if CONTROLLER
+#define     COUNTER                 128
 #define     I_PDU_50V               0b01011 //AN11 (RB4)
 #define     V_PDU_50V               0b01001 //AN9 (RB3)
 #define     I_PDU_33V               0b01010 //AN10 (RB1)
@@ -76,6 +77,7 @@
 #endif
 
 #if CONVERTER
+#define     COUNTER                 1024
 #define		VS_BUS                  0b00010 //AN2 (RA2) 
 #define		VS_BAT                  0b00001 //AN1 (RA1) 
 #define		IS_BAT                  0b00000 //AN0 (RA0) 
