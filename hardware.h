@@ -96,8 +96,6 @@ uint16_t                            vbatmax = 0;
 void initialize(void);
 void pid(uint16_t feedback, uint16_t setpoint, int24_t* acum, uint16_t* duty_cycle);
 void set_DC(uint16_t* duty_cycle);
-//void pid(uint16_t feedback, uint16_t setpoint);
-//void set_DC(void);
 uint16_t read_ADC(uint16_t channel);
 void log_control(void);
 void log_control_hex(void);
@@ -110,7 +108,6 @@ void UART_send_char(char bt);
 char UART_get_char(void); 
 void UART_send_string(const char* st_pt);
 void UART_send_u16(uint16_t number); 
-//void UART_send_i16(int16_t number); 
 void timing(void);
 void timing_8m(void);
 void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, char* previous_direction);
@@ -120,12 +117,11 @@ void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, cha
 #define     HEADER                  {UART_send_char(0x01); UART_send_char(0x02);}
 #define     FOOTER                  {UART_send_char(0x02); UART_send_char(0x01);}
 #define  	DIRECTION(x)		    {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(x);UART_send_char(0x03); UART_send_char(0x01);}
-#define  	RESTART		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x04);}
+#define  	START		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x04);UART_send_char(0x03); UART_send_char(0x01);}
+#define  	STOP		            {UART_send_char(0x01); UART_send_char(0x03); UART_send_char(0x05);;UART_send_char(0x03); UART_send_char(0x01);}
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
-#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
-//#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 0; log_on = 1; intacum = 0; conv = 0; }
-//#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(); RA4 = 1; log_on = 1; intacum = 0; conv = 1; }
+#define		STOP_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 0; log_on = 1; intacum = 0; conv = 0; TRISC0 = 1;}
+#define  	START_CONVERTER()		{ dc = DC_MAX; set_DC(&dc); RA4 = 1; log_on = 1; intacum = 0; conv = 1; TRISC0 = 0;}
 
 #endif /* HARDWARE_H*/

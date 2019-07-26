@@ -2,7 +2,7 @@
  * @file main.c
  * @author Juan J. Rojas
  * @date 10 Nov 2018
- * @brief main loop for the BDC prototype controller or converter.
+ * @brief main loop for the BDC prototype converter.
  * @par Institution:
  * LaSEINE / CeNT. Kyushu Institute of Technology.
  * @par Mail (after leaving Kyutech):
@@ -16,7 +16,8 @@
 /**@brief This is the main function of the program.
 */
 
-
+uint8_t char_count = 0;
+char    action = 0;
 void main(void)
 {
     initialize(); /// * Call the #initialize() function
@@ -34,23 +35,12 @@ void main(void)
         if (SECF) /// * The following tasks are executed every second:
         {     
             SECF = 0;
-            //log_control_hex();
+            log_control_hex();
             //if ((vbatav < vbatmax) && (vbusr > ivbusr)) vbusr -= 2;
-//            #if CONVERTER    
-//            if (vbatav < vbatmin)
-//            {
-//                STOP_CONVERTER();
-//                TRISC0 = 1;
-//            }
-//            #endif
-            display_value_u((uint16_t)second);
-            LINEBREAK;
-            display_value_u(vbus);
-            LINEBREAK;
-            display_value_u(vbusr);
-            LINEBREAK;
-            display_value_u(dc);
-            LINEBREAK;
+            if (vbatav < vbatmin)
+            {
+                STOP_CONVERTER();
+            }
         }       
 	}
 }
@@ -89,21 +79,50 @@ void __interrupt() ISR(void)
         while(RCIF) recep = RC1REG; /// * Empty the reception buffer and assign its contents to the variable @p recep
         switch (recep)
         {
-        case 0x63: /// * If @p recep received a @b "c", then:
-            STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
-            RESET_TIME() 
-            //TRISC0 = 1;                         /// * Set RC0 as input
-            vbusr = ivbusr;
+        case 0x01: ///
+            if (char_count == 0 || char_count == 4) char_count++;
+            else char_count = 0;
             break;
-        case 0x73: /// * If @p recep received an @b "s", then:
-            START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
-            RESET_TIME() 
-            //TRISC0 = 0; //MAYBE BPUT IT INSIDE START                        /// * Set RC0 as output
-            vbusr = ivbusr;
+        case 0x03:
+            if (char_count == 1 || char_count == 3) char_count++;
             break;
-        default:
-            recep = 0;
+        case 0x04:
+        case 0x05: 
+        case 0x06:
+        case 0x07:
+        case 0x08:
+            if (char_count == 2)
+            {
+                action = recep;
+                char_count++;
+            }
+            break;
+        default: 
+            char_count = 0;
+        }
+        if (char_count == 5)
+        {
+            switch (action)
+            {
+                case 0x04:
+                    START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
+                    RESET_TIME();
+                    break;
+                case 0x05:
+                    STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
+                    RESET_TIME();
+                    break;
+                case 0x06:
+                    vbusr++;
+                    break;
+                case 0x07:
+                    vbusr--;
+                    break;
+                case 0x08:
+                    break;             
+            }
+            action = 0;
+            char_count = 0;
         }
     }  
-   
 }

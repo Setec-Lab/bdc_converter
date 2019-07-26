@@ -2,7 +2,7 @@
  * @file harware.c
  * @author Juan J. Rojas
  * @date 10 Nov 2018
- * @brief function definitions for the BDC prototype controller.
+ * @brief function definitions for the BDC prototype converter.
  * @par Institution:
  * LaSEINE / CeNT. Kyushu Institute of Technology.
  * @par Mail (after leaving Kyutech):
@@ -126,10 +126,6 @@ void control_loop()
     pid(vbus, vbusr, &intacum, &dc);  /// * The #pid() function is called with @p feedback = #v and @p setpoint = #vref
     set_DC(&dc); /// The duty cycle is set by calling the #set_DC() function
 }
-/**@brief This function defines the PI controller
-*  @param   feedback average of measured values for the control variable
-*  @param   setpoint desire controlled output for the variable
-*/
 
 /**@brief This function defines the PI controller
 *  @param   feedback average of measured values for the control variable
@@ -166,49 +162,6 @@ void set_DC(uint16_t* duty_cycle)
     PSMC1DCH = (*duty_cycle >> 8) & 0x01; /// * Higher 1 bit of #dc are stored in @p PSMC1DCH
     PSMC1CONbits.PSMC1LD = 1; /// * Set the load register. This will load all the setting as once*/
 }
-
-///**@brief This function is the PI control loop
-//*/
-//void control_loop()
-//{   
-//    pid(vbus, vbusr);  /// * The #pid() function is called with @p feedback = #v and @p setpoint = #vref
-//    set_DC(); /// The duty cycle is set by calling the #set_DC() function
-//}
-///**@brief This function defines the PI controller
-//*  @param   feedback average of measured values for the control variable
-//*  @param   setpoint desire controlled output for the variable
-//*/
-//void pid(uint16_t feedback, uint16_t setpoint)
-//{ 
-//int16_t     er = 0; /// * Define @p er for calculating the error
-//int16_t     pi = 0; /// * Define @p pi for storing the PI compesator value
-//int16_t     prop = 0;
-//int16_t     inte = 0;
-//    er = (int16_t) (feedback - setpoint); /// * Calculate the error by substracting the @p feedback from the @p setpoint and store it in @p er
-//    if(er > ERR_MAX) er = ERR_MAX; /// * Make sure error is never above #ERR_MAX
-//    if(er < ERR_MIN) er = ERR_MIN; /// * Make sure error is never below #ERR_MIN
-//    prop = er / KP; /// * Calculate #proportional component of compensator
-//	intacum += (int24_t) (er); /// * Calculate #integral component of compensator
-//    inte = (int16_t) (intacum /  ((int24_t) KI * COUNTER));
-//    pi = prop + inte; /// * Sum them up and store in @p pi*/
-//    if ((uint16_t)((int16_t)dc + pi) >= DC_MAX){ /// * Make sure duty cycle is never above #DC_MAX
-//        dc = DC_MAX;
-//    }else if ((uint16_t)((int16_t)dc + pi) <= DC_MIN){ /// * Make sure duty cycle is never below #DC_MIN
-//        dc = DC_MIN;
-//    }else{
-//        dc = (uint16_t)((int16_t)dc + pi); /// * Store the new value of the duty cycle with operation @code dc = dc + pi @endcode
-//    }   
-//}
-///**@brief This function sets the desired duty cycle
-//*/
-//void set_DC()
-//{
-///// This function can set the duty cycle from 0x0 to 0x1FF
-//    PSMC1DCL = dc & 0x00FF; /// * Lower 8 bits of #dc are stored in @p PSMC1DCL
-//    PSMC1DCH = (dc >> 8) & 0x01; /// * Higher 1 bit of #dc are stored in @p PSMC1DCH
-//    PSMC1CONbits.PSMC1LD = 1; /// * Set the load register. This will load all the setting as once*/
-//}
-
 
 /**@brief This function takes care of printing the test data using the UART
 */
@@ -388,21 +341,22 @@ void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, cha
 {
     uint32_t new_power = 0;
     new_power =  (uint32_t)(pv_voltage * pv_current);
-    if (new_power > *previous_power)
-    {
-        //mantain direction
-    }
-    else if (new_power < *previous_power) 
+//    if (new_power > *previous_power)
+//    {
+//        //mantain direction
+//    }
+    if (new_power < *previous_power) 
     {
         switch (*previous_direction)
         {
-            case 0x01:
-                *previous_direction = 0x02;
+            case 0x06:
+                *previous_direction = 0x07;
                 break;
             default:
-                *previous_direction = 0x01; //If the direction was decreasing or mantaining it should increase
+                *previous_direction = 0x06; //If the direction was decreasing or mantaining it should increase
         }
     }
-    else *previous_direction = 0x03; //mantain setpoint
+    else if (new_power == *previous_power) *previous_direction = 0x08; //mantain setpoint
     *previous_power = new_power;
+    //06 increase 07 decrease 08 mantain
 }
