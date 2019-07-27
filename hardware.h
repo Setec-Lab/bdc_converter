@@ -50,7 +50,7 @@
 #define 	DC_MIN                  103 // DC = 0.2 MINIMUM
 #define 	DC_MAX                  461	// DC = 0.9 MAX
 #define     KP                      15 ///< Proportional constant divider 
-#define     KI                      35 ///< Integral constant divider 
+#define     KI                      100 ///< Integral constant divider 
 #define     VREF                    4800                  
 #define     sVREF                   (uint16_t) ( ( ( VREF * 4096.0 ) / 5000 ) + 0.5 )
 #define     CREF                    2000                  
