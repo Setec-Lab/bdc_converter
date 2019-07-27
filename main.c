@@ -18,6 +18,7 @@
 
 uint8_t char_count = 0;
 char    action = 0;
+char    recep[2] = {0x00};
 void main(void)
 {
     initialize(); /// * Call the #initialize() function
@@ -49,7 +50,7 @@ void main(void)
 */
 void __interrupt() ISR(void) 
 {
-    char recep = 0; /// Define and initialize @p recep variable to store the received character
+    //char recep = 0; /// Define and initialize @p recep variable to store the received character
     
     if(TMR1IF)
     {
@@ -76,31 +77,33 @@ void __interrupt() ISR(void)
             RC1STAbits.CREN = 0;  
             RC1STAbits.CREN = 1; 
         }
-        while(RCIF) recep = RC1REG; /// * Empty the reception buffer and assign its contents to the variable @p recep
-        switch (recep)
+        recep[1] = recep[0];
+        recep[0] = RC1REG; /// * Empty the reception buffer and assign its contents to the variable @p recep   
+        switch (recep[0])
         {
         case 0x01: ///
-            if (char_count == 0 || char_count == 4) char_count++;
+            if (char_count == 3) char_count++;
             else char_count = 0;
             break;
         case 0x03:
-            if (char_count == 1 || char_count == 3) char_count++;
+            if (recep[1] == 0x01 || char_count == 2) char_count++;
+            else char_count = 0;
             break;
         case 0x04:
         case 0x05: 
         case 0x06:
         case 0x07:
         case 0x08:
-            if (char_count == 2)
+            if (char_count == 1)
             {
-                action = recep;
+                action = recep[0];
                 char_count++;
-            }
+            }else char_count = 0;
             break;
         default: 
             char_count = 0;
         }
-        if (char_count == 5)
+        if (char_count == 4)
         {
             switch (action)
             {
