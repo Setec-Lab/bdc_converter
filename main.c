@@ -15,21 +15,11 @@
 
 /**@brief This is the main function of the program.
 */
-
-uint8_t char_count = 0;
-char    action = 0;
-char    recep[2] = {0x00};
 void main(void)
 {
     initialize(); /// * Call the #initialize() function
     __delay_ms(10);
     interrupt_enable();
-    voc = sVOC; 
-    ivbusr = sVREF;
-    vbusr = sVREF;
-    vbatmin = sVBATMIN;
-    vbatmax = sVBATMAX;
-    iref = sCREF;
     log_on = 1;
     while(1)
     {           
@@ -122,7 +112,10 @@ void __interrupt() ISR(void)
                     vbusr--;
                     break;
                 case 0x08:
-                    break;             
+                    break;
+                case 0x09:
+                    vbusr = ivbusr;
+                    break;
             }
             action = 0;
             char_count = 0;
