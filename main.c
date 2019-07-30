@@ -113,9 +113,6 @@ void __interrupt() ISR(void)
                     break;
                 case 0x08:
                     break;
-                case 0x09:
-                    vbusr = ivbusr;
-                    break;
             }
             action = 0;
             char_count = 0;
