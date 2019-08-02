@@ -1,0 +1,21 @@
+Fast Step Value	Execution Time(25us to 100 ms)	Trigger Out (On -1. Off -0)
+10	0.01	1
+5		
+15		
+25		
+15		
+30		
+6		
+2		
+8		
+6		
+2		
+10		
+5		
+15		
+25		
+15
+25
+10
+1
+2
