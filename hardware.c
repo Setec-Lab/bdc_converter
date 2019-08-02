@@ -171,7 +171,7 @@ void log_control_hex()
 /**This function takes care of sending the logging data in pieces to avoid disturbing the control loop. 
 This problem can be avoided with the use of interruptions for the control loop; however this was not implemented
 and could be considered as some future improvement IT IS IMPLEMENTED NOW*/  
-vbusav = (uint16_t) ( ( ( vbusav * 5000.0 ) / 4096 ) + 0.5 );
+vbusav = (uint16_t) ( ( ( vbusav * 5935.0 ) / 4096 ) + 0.5 );
 vbatav = (uint16_t) ( ( ( vbatav * 5000.0 ) / 4096 ) + 0.5 );
 ibatav = (int16_t) ( ( ( ibatav * 2.5 * 5000 ) / 4096 ) + 0.5 ); 
 //if ( ibatav > 0 ) capap += (uint16_t) ( ibatav / 360 ) + 0.5; /// * Divide #iprom between 3600 and multiplied by 10 add it to #qprom to integrate the current over time
