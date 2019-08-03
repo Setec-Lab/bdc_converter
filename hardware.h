@@ -119,7 +119,7 @@ void PAO(uint16_t pv_voltage, uint16_t pv_current, uint32_t* previous_power, cha
 #define     FOOTER                  {UART_send_char(0x02); UART_send_char(0x01);}
 #define     RESET_TIME()            { minute = 0; second = -1; } ///< Reset timers.
 //DC-DC CONVERTER RELATED DEFINITION
-#define		STOP_CONVERTER()		{ vbusr = ivbusr; dc = DC_MAX/2; set_DC(&dc); RA4 = 0; log_on = 1; intacum = 0; conv = 0; TRISC0 = 1;}
-#define  	START_CONVERTER()		{ vbusr = ivbusr; dc = DC_MAX/2; set_DC(&dc); RA4 = 1; log_on = 1; intacum = 0; conv = 1; TRISC0 = 0;}
+#define		STOP_CONVERTER()		{ vbusr = ivbusr; dc = DC_MAX; set_DC(&dc); RA4 = 0; log_on = 1; intacum = 0; conv = 0; TRISC0 = 1;}
+#define  	START_CONVERTER()		{ vbusr = ivbusr; dc = DC_MAX; set_DC(&dc); RA4 = 1; log_on = 1; intacum = 0; conv = 1; TRISC0 = 0;}
 
 #endif /* HARDWARE_H*/
