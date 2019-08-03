@@ -53,8 +53,9 @@ void __interrupt() ISR(void)
         //HERE 2154 is a hack to get 0 current
         ibat = 2048 - ibat; ///If the #state is #CHARGE or #POSTCHARGE change the sign of the result  
         if (conv){
-            control_loop(); /// -# The #control_loop() function is called*/
-            //if ((vbat >= vbatmax) && (vbusr < voc)) vbusr +=1; ///NEEDS CORRECTION
+//            control_loop(); /// -# The #control_loop() function is called*/
+//            //if ((vbat >= vbatmax) && (vbusr < voc)) vbusr +=1; ///NEEDS CORRECTION
+            set_DC(&dc);
         }
         calculate_avg(); /// * Then, averages for the 250 values available each second are calculated by calling the #calculate_avg() function
         timing(); /// * Timing control is executed by calling the #timing() function         
@@ -106,10 +107,10 @@ void __interrupt() ISR(void)
                     RESET_TIME();
                     break;
                 case 0x06:
-                    vbusr += 2;
+                    dc++;
                     break;
                 case 0x07:
-                    vbusr -= 2;
+                    dc--;
                     break;
                 case 0x08:
                     break;
