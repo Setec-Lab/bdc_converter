@@ -107,10 +107,10 @@ void __interrupt() ISR(void)
                     RESET_TIME();
                     break;
                 case 0x06:
-                    dc++;
+                    dc--;
                     break;
                 case 0x07:
-                    dc--;
+                    dc++;
                     break;
                 case 0x08:
                     break;
