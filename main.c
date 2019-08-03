@@ -106,10 +106,10 @@ void __interrupt() ISR(void)
                     RESET_TIME();
                     break;
                 case 0x06:
-                    vbusr++;
+                    vbusr += 10;
                     break;
                 case 0x07:
-                    vbusr--;
+                    vbusr -= 10;
                     break;
                 case 0x08:
                     break;
