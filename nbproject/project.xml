@@ -3,7 +3,7 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>BDC_prototype</name>
+            <name>bdc_converter</name>
             <creation-uuid>bee87269-40b8-40be-ba74-57b5a834871a</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>

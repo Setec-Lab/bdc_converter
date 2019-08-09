@@ -108,9 +108,11 @@ void __interrupt() ISR(void)
                     break;
                 case 0x06:
                     dc++;
+                    if (dc > DC_MAX) dc = DC_MAX;
                     break;
                 case 0x07:
                     dc--;
+                    if (dc < DC_MIN) dc = DC_MIN;
                     break;
                 case 0x08:
                     break;
