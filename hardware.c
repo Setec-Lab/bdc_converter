@@ -84,8 +84,8 @@ void initialize()
     ADCON0bits.ADRMD = 0; /// * 12 bits result
     ADCON1bits.ADCS = 0b010; /// * Clock selected as FOSC/32
     ADCON1bits.ADNREF = 0; /// * Connected to Vss
-    //THIS IS THE CORRECT //ADCON1bits.ADPREF = 0b01; /// * Connected to Vref+
-    ADCON1bits.ADPREF = 0b00; /// * Connected to VDD
+    ADCON1bits.ADPREF = 0b01; /// * Connected to Vref+
+    //ADCON1bits.ADPREF = 0b00; /// * Connected to VDD
     ADCON1bits.ADFM = 1; /// * 2's compliment result
     ADCON2bits.CHSN = 0b1111; /// * Negative differential input as ADNREF
     ADCON0bits.ADON = 1; /// * Turn on the ADC
@@ -225,9 +225,9 @@ void calculate_avg()
     switch(count)
     {
         case COUNTER + 1: /// If #count = #COUNTER
-            vbusac = 0;
-            vbatac = 0;
-            ibatac = 0;
+            vbusac = (uint24_t) vbus;
+            vbatac = (uint24_t) vbat;
+            ibatac = (uint24_t) ibat;
             break;
         case 0: /// If #count = 0
             vbusav = ((vbusac >> 10) + ((vbusac >> 9) & 0x01)); /// * This is equivalent to vbusac / 1024 = vbusac / 2^10      

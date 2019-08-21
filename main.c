@@ -51,7 +51,7 @@ void __interrupt() ISR(void)
         vbat = read_ADC(VS_BAT); /// * Then, the ADC channels are read by calling the #read_ADC() function
         ibat = (int16_t)(read_ADC(IS_BAT)); /// * Then, the ADC channels are read by calling the #read_ADC() function
         //HERE 2154 is a hack to get 0 current
-        ibat = 2048 - ibat; ///If the #state is #CHARGE or #POSTCHARGE change the sign of the result  
+        ibat = 2048 - ibat; 
         if (conv){
 //            control_loop(); /// -# The #control_loop() function is called*/
 //            //if ((vbat >= vbatmax) && (vbusr < voc)) vbusr +=1; ///NEEDS CORRECTION
