@@ -22,17 +22,69 @@ void main(void)
     interrupt_enable();
     log_on = 1;
     while(1)
-    {           
-        if (SECF) /// * The following tasks are executed every second:
-        {     
+    {   
+        if (recep_flag)
+        {
+            recep_flag = 0;
+            switch (recep[0])
+            {
+                case 0x01: ///
+                    if (char_count == 3) char_count++;
+                    else char_count = 0;
+                    break;
+                case 0x03:
+                    if (recep[1] == 0x01 || char_count == 2) char_count++;
+                    else char_count = 0;
+                    break;
+                case 0x04:
+                case 0x05: 
+                case 0x06:
+                case 0x07:
+                case 0x08:
+                    if (char_count == 1)
+                    {
+                        action = recep[0];
+                        char_count++;
+                    }else char_count = 0;
+                    break;
+                default: 
+                    char_count = 0;
+                }
+                if (char_count == 4)
+                {
+                    switch (action)
+                    {
+                        case 0x04:
+                            START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
+                            RESET_TIME();
+                            break;
+                        case 0x05:
+                            STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
+                            RESET_TIME();
+                            break;
+                        case 0x06:
+                            dc++;
+                            if (dc > DC_MAX) dc = DC_MAX;
+                            break;
+                        case 0x07:
+                            dc--;
+                            if (dc < DC_MIN) dc = DC_MIN;
+                            break;
+                        case 0x08:
+                            break;
+                    }
+                    action = 0;
+                    char_count = 0;
+                }
+        } 
+        
+        if (SECF)
+        {
             SECF = 0;
             log_control_hex();
             //if ((vbatav < vbatmax) && (vbusr > ivbusr)) vbusr -= 2;
-            if (vbatav < vbatmin)
-            {
-                STOP_CONVERTER();
-            }
-        }       
+            if (vbatav < vbatmin)STOP_CONVERTER();
+        }
 	}
 }
 
@@ -70,55 +122,6 @@ void __interrupt() ISR(void)
         }
         recep[1] = recep[0];
         recep[0] = RC1REG; /// * Empty the reception buffer and assign its contents to the variable @p recep   
-        switch (recep[0])
-        {
-        case 0x01: ///
-            if (char_count == 3) char_count++;
-            else char_count = 0;
-            break;
-        case 0x03:
-            if (recep[1] == 0x01 || char_count == 2) char_count++;
-            else char_count = 0;
-            break;
-        case 0x04:
-        case 0x05: 
-        case 0x06:
-        case 0x07:
-        case 0x08:
-            if (char_count == 1)
-            {
-                action = recep[0];
-                char_count++;
-            }else char_count = 0;
-            break;
-        default: 
-            char_count = 0;
-        }
-        if (char_count == 4)
-        {
-            switch (action)
-            {
-                case 0x04:
-                    START_CONVERTER(); /// -# Start the converter by calling the #START_CONVERTER() macro.
-                    RESET_TIME();
-                    break;
-                case 0x05:
-                    STOP_CONVERTER(); /// -# Stop the converter by calling the #STOP_CONVERTER() macro.
-                    RESET_TIME();
-                    break;
-                case 0x06:
-                    dc++;
-                    if (dc > DC_MAX) dc = DC_MAX;
-                    break;
-                case 0x07:
-                    dc--;
-                    if (dc < DC_MIN) dc = DC_MIN;
-                    break;
-                case 0x08:
-                    break;
-            }
-            action = 0;
-            char_count = 0;
-        }
+        recep_flag = 1;
     }  
 }

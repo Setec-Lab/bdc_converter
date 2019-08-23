@@ -61,11 +61,12 @@
 #define     sVBATMIN                (uint16_t) ( ( ( VBATMIN * 4096.0 ) / 5000 ) + 0.5 )
 #define     VBATMAX                 4150
 #define     sVBATMAX                (uint16_t) ( ( ( VBATMAX * 4096.0 ) / 5000 ) + 0.5 )
-#define     COUNTER                 1024
+#define     COUNTER                 128
 #define		VS_BUS                  0b00010 //AN2 (RA2) 
 #define		VS_BAT                  0b00001 //AN1 (RA1) 
 #define		IS_BAT                  0b00000 //AN0 (RA0) 
 
+bool                                recep_flag = 0;
 bool                                SECF = 0;
 uint16_t                            count = COUNTER + 1; ///< Counter that should be cleared every second. Initialized as #COUNTER 
 uint8_t                             char_count = 0;

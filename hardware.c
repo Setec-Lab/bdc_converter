@@ -39,8 +39,8 @@ void initialize()
     TMR1GE = 0;      //Dont care about gate
     TMR1CS0 = 0;       
     TMR1CS1 = 0;    //FOSC/4
-    T1CKPS0 = 0;
-    T1CKPS1 = 0;    // 1 millisecond
+    T1CKPS0 = 1;
+    T1CKPS1 = 1;    // 8 millisecond
     TMR1H = 0xE1;   //TMR1 Fosc/4= 8Mhz (Tosc= 0.125us)
     TMR1L = 0x83;   //TMR1 counts: 7805 x 0.125us = 0.97562ms
     /** @b PSMC/PWM @b SETTINGS*/
@@ -230,9 +230,9 @@ void calculate_avg()
             ibatac = (uint24_t) ibat;
             break;
         case 0: /// If #count = 0
-            vbusav = ((vbusac >> 10) + ((vbusac >> 9) & 0x01)); /// * This is equivalent to vbusac / 1024 = vbusac / 2^10      
-            vbatav = ((vbatac >> 10) + ((vbatac >> 9) & 0x01)); /// * This is equivalent to vbatac / 1024 = vbatac / 2^10          
-            ibatav = ((ibatac >> 10) + ((ibatac >> 9) & 0x01)); /// * This is equivalent to ibatac / 1024 = ibatac / 2^10   
+            vbusav = ((vbusac >> 7) + ((vbusac >> 6) & 0x01)); /// * This is equivalent to vbusac / 1024 = vbusac / 2^10      
+            vbatav = ((vbatac >> 7) + ((vbatac >> 6) & 0x01)); /// * This is equivalent to vbatac / 1024 = vbatac / 2^10          
+            ibatav = ((ibatac >> 7) + ((ibatac >> 6) & 0x01)); /// * This is equivalent to ibatac / 1024 = ibatac / 2^10   
             //ibatav = (int16_t)(ibatac / 1024.0); /// * This is equivalent to ibatac / 1024 = ibatac / 2^10   
             break;
         default: /// If #count is not any of the previous cases then
