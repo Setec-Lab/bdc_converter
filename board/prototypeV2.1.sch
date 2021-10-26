@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.4.2">
+<eagle version="9.6.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -2730,7 +2730,7 @@ Source: www.farnell.com/datasheets/247.pdf</description>
 </libraries>
 <attributes>
 <attribute name="DESIGNER" value="Juan J. Rojas"/>
-<attribute name="INSTITUTION" value="Kyushu Institute of Technology"/>
+<attribute name="INSTITUTION" value="Instituto Tecnológico de Costa Rica"/>
 <attribute name="PROJECT_NAME" value="BDC_Prototype"/>
 <attribute name="VERSION" value="1.1"/>
 </attributes>
